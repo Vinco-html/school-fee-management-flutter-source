@@ -1,18 +1,17 @@
-# Exported from Render on 2026-09-08T23:50:00Z
-version: "1"
 services:
-- type: web
-  name: school-fee-api
-  runtime: node
-  repo: https://github.com/Vinco-html/school-fee-management-flutter-source
-  plan: free
-  envVars:
-  - key: DATABASE_URL
-    sync: false
-  region: oregon
-  buildCommand: corepack enable --install-directory ~/.local/bin && corepack prepare
-    pnpm@latest --activate && pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server
-    run build && pnpm --filter @workspace/db run push
-  startCommand: pnpm --filter @workspace/api-server run start
-  healthCheckPath: /api/healthz
-  autoDeployTrigger: commit
+  - type: web
+    name: school-fee-api
+    runtime: node
+    plan: free
+    buildCommand: corepack enable --install-directory ~/.local/bin && corepack prepare pnpm@latest --activate && pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/db run push
+    startCommand: pnpm --filter @workspace/api-server run start
+    healthCheckPath: /api/healthz
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: school-fee-db
+          property: connectionString
+
+databases:
+  - name: school-fee-db
+    plan: free
