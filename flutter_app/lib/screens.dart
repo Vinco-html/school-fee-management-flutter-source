@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -7,6 +8,7 @@ import 'theme.dart';
 
 final _money = NumberFormat.currency(symbol: 'KES ', decimalDigits: 0);
 final _date = DateFormat('d MMM, h:mm a');
+final _dayLabel = DateFormat('d MMM');
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key, required this.store});
@@ -18,6 +20,7 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   int index = 0;
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final pages = const [
     DashboardPage(),
@@ -32,7 +35,7 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 900;
     final labels = [
-      'Overview',
+      'Dashboard',
       'Students',
       'Classes',
       'Payments',
@@ -48,6 +51,10 @@ class _AppShellState extends State<AppShell> {
       Icons.markunread_outlined,
     ];
     return Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: const Color(0xFFF7F8F9),
+      endDrawer:
+          _SideMenu(store: widget.store, onSelectRole: widget.store.setRole),
       body: SafeArea(
         child: Row(
           children: [
@@ -66,7 +73,8 @@ class _AppShellState extends State<AppShell> {
                     store: widget.store,
                     title: labels[index],
                     onRefresh: widget.store.load,
-                    onSelectRole: widget.store.setRole,
+                    onOpenMenu: () =>
+                        _scaffoldKey.currentState?.openEndDrawer(),
                   ),
                   if (widget.store.isOffline)
                     _OfflineBanner(onRetry: widget.store.load),
@@ -79,18 +87,116 @@ class _AppShellState extends State<AppShell> {
       ),
       bottomNavigationBar: wide
           ? null
-          : NavigationBar(
-              selectedIndex: index,
-              onDestinationSelected: (value) => setState(() => index = value),
-              destinations: [
-                for (var i = 0; i < labels.length; i++)
-                  NavigationDestination(icon: Icon(icons[i]), label: labels[i]),
-              ],
+          : Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(top: BorderSide(color: AppTheme.line)),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      for (final i in [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4
+                      ]) // indices into labels/icons you want to keep
+                        _BottomNavItem(
+                          icon: icons[i],
+                          label: labels[i],
+                          selected: index == i,
+                          badgeCount: i == 5 ? widget.store.unreadCount : 0,
+                          onTap: () => setState(() => index = i),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
             ),
     );
   }
 }
 
+class _BottomNavItem extends StatelessWidget {
+  const _BottomNavItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.badgeCount = 0,
+  });
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final int badgeCount;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding:
+              EdgeInsets.symmetric(horizontal: selected ? 16 : 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppTheme.peach.withValues(alpha: .14)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(icon,
+                      size: 22,
+                      color: selected ? AppTheme.peach : AppTheme.muted),
+                  if (badgeCount > 0)
+                    Positioned(
+                      right: -4,
+                      top: -4,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          color: AppTheme.peach,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints:
+                            const BoxConstraints(minWidth: 14, minHeight: 14),
+                        child: Text('$badgeCount',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.w800)),
+                      ),
+                    ),
+                ],
+              ),
+              if (selected) ...[
+                const SizedBox(width: 6),
+                Text(label,
+                    style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.peach)),
+              ],
+            ],
+          ),
+        ),
+      );
+}
+
+/// Sidebar  ? logo, "Menu" section label, nav rows (selected item shows a
+/// trailing arrow like the Academix reference), invite card, profile row.
 class _Sidebar extends StatelessWidget {
   const _Sidebar(
       {required this.store,
@@ -107,31 +213,31 @@ class _Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         width: 232,
-        color: AppTheme.ink,
+        color: Colors.white,
         padding: const EdgeInsets.fromLTRB(18, 24, 14, 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10),
+              padding: EdgeInsets.symmetric(horizontal: 5),
               child: Row(children: [
                 Icon(Icons.auto_awesome, color: AppTheme.peach, size: 20),
                 SizedBox(width: 8),
-                Text('Kijani',
+                Text('Petunia',
                     style: TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.ink,
                         fontSize: 21,
                         fontWeight: FontWeight.w700)),
                 Text(' school',
-                    style: TextStyle(color: Color(0xFF9CA9B5), fontSize: 21)),
+                    style: TextStyle(color: AppTheme.muted, fontSize: 21)),
               ]),
             ),
-            const SizedBox(height: 42),
+            const SizedBox(height: 34),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 10),
-              child: Text('WORKSPACE',
+              child: Text('MENU',
                   style: TextStyle(
-                      color: Color(0xFF87929D),
+                      color: AppTheme.muted,
                       fontSize: 10,
                       letterSpacing: 1.4,
                       fontWeight: FontWeight.w700)),
@@ -148,24 +254,41 @@ class _Sidebar extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                  color: const Color(0xFF2C3B46),
-                  borderRadius: BorderRadius.circular(18)),
-              child: const Column(
+                gradient: const LinearGradient(
+                    colors: [AppTheme.peach, AppTheme.green],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Connect Equity Bank',
+                  const Text('Connect Equity Bank',
                       style: TextStyle(
                           color: Colors.white, fontWeight: FontWeight.w700)),
-                  SizedBox(height: 5),
-                  Text('Automate fee updates and receipts.',
+                  const SizedBox(height: 5),
+                  const Text('Automate fee updates and receipts.',
                       style: TextStyle(
-                          color: Color(0xFFAFBBC2), fontSize: 12, height: 1.3)),
-                  SizedBox(height: 14),
-                  Text('Ready for setup →',
-                      style: TextStyle(
-                          color: AppTheme.peach,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12)),
+                          color: Colors.white70, fontSize: 12, height: 1.3)),
+                  const SizedBox(height: 14),
+                  Row(children: [
+                    Expanded(
+                        child: OutlinedButton(
+                            onPressed: () => store.syncEquity(),
+                            style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Colors.white54),
+                                foregroundColor: Colors.white,
+                                backgroundColor: Colors.white24),
+                            child: const Text('Decline'))),
+                    const SizedBox(width: 8),
+                    Expanded(
+                        child: FilledButton(
+                            onPressed: () => store.syncEquity(),
+                            style: FilledButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: AppTheme.ink),
+                            child: const Text('Approve'))),
+                  ]),
                 ],
               ),
             ),
@@ -185,8 +308,8 @@ class _Sidebar extends StatelessWidget {
                 Expanded(
                     child: Text('Jane Mwangi\nSchool admin',
                         style: TextStyle(
-                            color: Colors.white, fontSize: 12, height: 1.35))),
-                Icon(Icons.more_horiz, color: Color(0xFF92A0AC)),
+                            color: AppTheme.ink, fontSize: 12, height: 1.35))),
+                Icon(Icons.chevron_right_rounded, color: AppTheme.muted),
               ]),
             ),
           ],
@@ -217,20 +340,18 @@ class _NavItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 12),
             decoration: BoxDecoration(
               color: selected
-                  ? AppTheme.peach.withValues(alpha: .18)
+                  ? AppTheme.peach.withValues(alpha: .14)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(13),
             ),
-            child: Row(children: [
+            child: Column(children: [
               Icon(icon,
-                  color: selected ? AppTheme.peach : const Color(0xFFAAB4BD),
-                  size: 19),
+                  color: selected ? AppTheme.peach : AppTheme.muted, size: 19),
               const SizedBox(width: 12),
               Expanded(
                   child: Text(label,
                       style: TextStyle(
-                          color:
-                              selected ? Colors.white : const Color(0xFFAAB4BD),
+                          color: selected ? AppTheme.peach : AppTheme.ink,
                           fontSize: 13,
                           fontWeight:
                               selected ? FontWeight.w700 : FontWeight.w500))),
@@ -243,25 +364,30 @@ class _NavItem extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8)),
                     child: Text('$count',
                         style: const TextStyle(
-                            color: AppTheme.ink,
+                            color: Colors.white,
                             fontSize: 10,
-                            fontWeight: FontWeight.w800))),
+                            fontWeight: FontWeight.w800)))
+              else if (selected)
+                const Icon(Icons.arrow_forward_rounded,
+                    color: AppTheme.peach, size: 16),
             ]),
           ),
         ),
       );
 }
 
+/// Top bar  ? title + date-ish subtitle, search with a mic affordance,
+/// theme/notification icons, role picker (stands in for the profile chip).
 class _TopBar extends StatelessWidget {
   const _TopBar(
       {required this.store,
       required this.title,
       required this.onRefresh,
-      required this.onSelectRole});
+      required this.onOpenMenu});
   final SchoolStore store;
   final String title;
   final Future<void> Function() onRefresh;
-  final ValueChanged<UserRole> onSelectRole;
+  final VoidCallback onOpenMenu;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -276,90 +402,240 @@ class _TopBar extends StatelessWidget {
                       fontSize: 25,
                       fontWeight: FontWeight.w800)),
               const SizedBox(height: 4),
-              Text(store.summary?.term ?? 'Loading your school workspace…',
+              Text(store.summary?.term ?? 'Loading your school workspace ?',
                   style: const TextStyle(color: AppTheme.muted, fontSize: 12)),
             ],
           );
-          final rolePicker = PopupMenuButton<UserRole>(
-            initialValue: store.role,
-            onSelected: onSelectRole,
-            itemBuilder: (_) => const [
-              PopupMenuItem(
-                  value: UserRole.admin, child: Text('Preview as Admin')),
-              PopupMenuItem(
-                  value: UserRole.accountant,
-                  child: Text('Preview as Accountant')),
-            ],
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-              decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppTheme.line)),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                CircleAvatar(
-                    radius: 15,
-                    backgroundColor: store.isAccountant
-                        ? AppTheme.blue.withValues(alpha: .16)
-                        : AppTheme.peach.withValues(alpha: .24),
-                    child: Icon(
-                        store.isAccountant
-                            ? Icons.calculate_outlined
-                            : Icons.admin_panel_settings_outlined,
-                        color:
-                            store.isAccountant ? AppTheme.blue : AppTheme.peach,
-                        size: 17)),
-                const SizedBox(width: 8),
-                Text(store.isAccountant ? 'Accountant' : 'Admin',
-                    style: const TextStyle(
-                        color: AppTheme.ink,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700)),
-                const Icon(Icons.keyboard_arrow_down,
-                    size: 17, color: AppTheme.muted),
-              ]),
-            ),
-          );
-          final search = TextField(
-            decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search, size: 18),
-                hintText: 'Search anything',
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 11)),
-            onSubmitted: (_) {},
-          );
+          final menuButton = _RoundIcon(
+              icon: Icons.menu_rounded,
+              onTap: onOpenMenu,
+              dot: store.unreadCount > 0);
           return Padding(
             padding: const EdgeInsets.fromLTRB(28, 22, 28, 10),
             child: compact
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                        Row(children: [
-                          Expanded(child: heading),
-                          IconButton(
-                              onPressed: onRefresh,
-                              icon: const Icon(Icons.refresh_rounded,
-                                  color: AppTheme.muted)),
-                          rolePicker
-                        ]),
-                        const SizedBox(height: 13),
-                        search,
-                      ])
+                ? Row(children: [
+                    Expanded(child: heading),
+                    IconButton(
+                        onPressed: onRefresh,
+                        icon: const Icon(Icons.refresh_rounded,
+                            color: AppTheme.muted)),
+                    const SizedBox(width: 4),
+                    menuButton,
+                  ])
                 : Row(children: [
                     Expanded(child: heading),
-                    SizedBox(width: 190, child: search),
                     const SizedBox(width: 12),
                     IconButton(
                         onPressed: onRefresh,
                         icon: const Icon(Icons.refresh_rounded,
                             color: AppTheme.muted)),
                     const SizedBox(width: 4),
-                    rolePicker
+                    menuButton,
                   ]),
           );
         },
       );
 }
+
+class _RoundIcon extends StatelessWidget {
+  const _RoundIcon({required this.icon, required this.onTap, this.dot = false});
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool dot;
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(color: AppTheme.line)),
+          child: Stack(children: [
+            Center(child: Icon(icon, size: 17, color: AppTheme.ink)),
+            if (dot)
+              Positioned(
+                  right: 9,
+                  top: 9,
+                  child: Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                          color: AppTheme.peach, shape: BoxShape.circle))),
+          ]),
+        ),
+      );
+}
+
+class _RolePicker extends StatelessWidget {
+  const _RolePicker({required this.store, required this.onSelectRole});
+  final SchoolStore store;
+  final ValueChanged<UserRole> onSelectRole;
+  @override
+  Widget build(BuildContext context) => PopupMenuButton<UserRole>(
+        initialValue: store.role,
+        onSelected: onSelectRole,
+        itemBuilder: (_) => const [
+          PopupMenuItem(value: UserRole.admin, child: Text('Preview as Admin')),
+          PopupMenuItem(
+              value: UserRole.accountant, child: Text('Preview as Accountant')),
+        ],
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+          decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppTheme.line)),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            CircleAvatar(
+                radius: 15,
+                backgroundColor: store.isAccountant
+                    ? AppTheme.blue.withValues(alpha: .16)
+                    : AppTheme.peach.withValues(alpha: .24),
+                child: Icon(
+                    store.isAccountant
+                        ? Icons.calculate_outlined
+                        : Icons.admin_panel_settings_outlined,
+                    color: store.isAccountant ? AppTheme.blue : AppTheme.peach,
+                    size: 17)),
+            const SizedBox(width: 8),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(store.isAccountant ? 'Accountant' : 'Jane Mwangi',
+                  style: const TextStyle(
+                      color: AppTheme.ink,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700)),
+              const Text('Sr. School admin',
+                  style: TextStyle(color: AppTheme.muted, fontSize: 10)),
+            ]),
+            const SizedBox(width: 4),
+            const Icon(Icons.keyboard_arrow_down,
+                size: 17, color: AppTheme.muted),
+          ]),
+        ),
+      );
+}
+
+class _SideMenu extends StatelessWidget {
+  const _SideMenu({required this.store, required this.onSelectRole});
+  final SchoolStore store;
+  final ValueChanged<UserRole> onSelectRole;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    return Drawer(
+      width: size.width,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Stack(
+        children: [
+          // Full-screen translucent scrim  ? tap anywhere here to close.
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(color: Colors.black.withValues(alpha: .35)),
+            ),
+          ),
+          // The actual menu panel  ? only this has a background.
+          Align(
+            alignment: Alignment.topRight,
+            child: SafeArea(
+              child: Container(
+                width: size.width * 0.6,
+                height: size.height * 0.4,
+                margin: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: .08),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8)),
+                  ],
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(18, 20, 18, 20),
+                  children: [
+                    const Text('MENU',
+                        style: TextStyle(
+                            color: AppTheme.muted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1)),
+                    const SizedBox(height: 12),
+                    _RolePicker(store: store, onSelectRole: onSelectRole),
+                    const SizedBox(height: 20),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Stack(clipBehavior: Clip.none, children: [
+                        const Icon(Icons.message, color: AppTheme.ink),
+                        if (store.unreadCount > 0)
+                          Positioned(
+                            right: -2,
+                            top: -2,
+                            child: Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                  color: AppTheme.peach,
+                                  shape: BoxShape.circle),
+                            ),
+                          ),
+                      ]),
+                      title: const Text('Messages'),
+                      trailing: store.unreadCount > 0
+                          ? Text('${store.unreadCount}',
+                              style: const TextStyle(
+                                  color: AppTheme.peach,
+                                  fontWeight: FontWeight.w800))
+                          : null,
+                      onTap: () => Navigator.pop(context),
+                    ),
+                    const Divider(height: 20),
+                    Row(children: [
+                      Expanded(
+                        child: _RoundIcon(
+                            icon: Icons.wb_twilight,
+                            onTap: () => Navigator.pop(context),
+                            dot: store.unreadCount > 0),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                          child: _RoundIcon(
+                              icon: Icons.wb_twilight,
+                              onTap: () => Navigator.pop(context),
+                              dot: store.unreadCount > 0)),
+                    ]),
+                    const SizedBox(height: 12),
+                    const Text('Logout',
+                        style: TextStyle(
+                            color: Color(0xFFFF0000),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1)),
+                    const SizedBox(height: 12),
+                    const Icon(Icons.close, color: Color(0xFF000000))
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard  ? Academix reference: 3 stat pills + course-statistics card,
+// a trend chart card, an activity table, and a right rail with a schedule
+// list plus a gradient "upcoming" card.
+// ---------------------------------------------------------------------------
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -370,52 +646,49 @@ class DashboardPage extends StatelessWidget {
     if (summary == null) return _DashboardSkeleton(store: store);
     return _PageScroll(
       children: [
-        Wrap(
-          spacing: 14,
-          runSpacing: 14,
-          children: [
-            _MetricCard(
-                label: 'Total students',
-                value: '${summary.students}',
-                helper: 'Across 4 classes',
-                icon: Icons.people_alt_outlined,
-                tint: AppTheme.blue),
-            _MetricCard(
-                label: 'Collected this term',
-                value: _money.format(summary.collected),
-                helper: '${summary.paymentCount} completed payments',
-                icon: Icons.trending_up_rounded,
-                tint: AppTheme.green),
-            _MetricCard(
-                label: 'Outstanding balance',
-                value: _money.format(summary.outstanding),
-                helper: 'Needs follow-up',
-                icon: Icons.account_balance_wallet_outlined,
-                tint: AppTheme.peach),
-            _MetricCard(
-                label: 'Unread activity',
-                value: '${summary.unreadNotifications}',
-                helper: 'Admin review queue',
-                icon: Icons.notifications_none_rounded,
-                tint: const Color(0xFF9B6BD9)),
-          ],
-        ),
-        const SizedBox(height: 18),
         LayoutBuilder(builder: (context, constraints) {
           final split = constraints.maxWidth > 980;
           final left = Column(children: [
-            _CollectionCard(summary: summary),
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (store.isAccountant)
+                Expanded(
+                  flex: 4,
+                  child: Wrap(spacing: 10, runSpacing: 10, children: [
+                    _StatCircle(
+                        label: 'Balance',
+                        value: '${summary.students}',
+                        icon: Icons.people_alt_outlined,
+                        tint: AppTheme.peach),
+                    _StatCircle(
+                        label: 'Collected',
+                        value: '${summary.paymentCount}',
+                        icon: Icons.receipt_long_outlined,
+                        tint: AppTheme.green),
+                    _StatCircle(
+                        label: 'Expected',
+                        value: '${summary.unreadNotifications}',
+                        icon: Icons.notifications_none_rounded,
+                        tint: AppTheme.ink),
+                  ]),
+                ),
+              const SizedBox(width: 14),
+              Expanded(flex: 4, child: _CourseStatisticsCard(summary: summary)),
+            ]),
             const SizedBox(height: 18),
-            _ActivityCard(items: summary.recentActivity),
+            _TrendCard(summary: summary),
+            const SizedBox(height: 18),
+            _ActivityTableCard(items: summary.recentActivity),
           ]);
           final right = Column(children: [
-            _EquityCard(store: store),
+            _ScheduleCard(items: summary.recentActivity),
+            const SizedBox(height: 18),
+            _UpcomingCard(store: store),
             const SizedBox(height: 18),
             _MessageCard(store: store),
           ]);
           return split
               ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Expanded(flex: 6, child: left),
+                  Expanded(flex: 7, child: left),
                   const SizedBox(width: 18),
                   Expanded(flex: 4, child: right)
                 ])
@@ -426,293 +699,579 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
-/// Mirrors the real dashboard layout using shimmering placeholders, shown
-/// while data is loading for the first time or while the API is unreachable.
 class _DashboardSkeleton extends StatelessWidget {
   const _DashboardSkeleton({required this.store});
   final SchoolStore store;
   @override
   Widget build(BuildContext context) => _PageScroll(children: [
-        Wrap(spacing: 14, runSpacing: 14, children: [
-          for (var i = 0; i < 4; i++) const _MetricCardSkeleton()
+        Row(children: [
+          Expanded(
+              flex: 3,
+              child: Wrap(spacing: 12, runSpacing: 12, children: const [
+                _StatCircleSkeleton(),
+                _StatCircleSkeleton(),
+                _StatCircleSkeleton()
+              ])),
+          const SizedBox(width: 14),
+          const Expanded(flex: 4, child: _CourseStatisticsSkeleton()),
         ]),
         const SizedBox(height: 18),
-        LayoutBuilder(builder: (context, constraints) {
-          final split = constraints.maxWidth > 980;
-          final left = Column(children: const [
-            _CollectionCardSkeleton(),
-            SizedBox(height: 18),
-            _ActivityCardSkeleton()
-          ]);
-          // The Equity and Messages cards don't depend on fetched data, so
-          // they render for real even while the rest of the page is a
-          // skeleton — no reason to fake something that already works.
-          final right = Column(children: [
-            _EquityCard(store: store),
-            const SizedBox(height: 18),
-            _MessageCard(store: store)
-          ]);
-          return split
-              ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Expanded(flex: 6, child: left),
-                  const SizedBox(width: 18),
-                  Expanded(flex: 4, child: right)
-                ])
-              : Column(children: [left, const SizedBox(height: 18), right]);
-        }),
+        const _TrendCardSkeleton(),
+        const SizedBox(height: 18),
+        const _ActivityTableSkeleton(),
       ]);
 }
 
-class _MetricCardSkeleton extends StatelessWidget {
-  const _MetricCardSkeleton();
-  @override
-  Widget build(BuildContext context) => SizedBox(
-        width: 230,
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const _Skeleton(width: 36, height: 36, radius: 12),
-              const SizedBox(height: 20),
-              const _Skeleton(width: 90, height: 11),
-              const SizedBox(height: 9),
-              const _Skeleton(width: 120, height: 20),
-              const SizedBox(height: 9),
-              const _Skeleton(width: 100, height: 11),
-            ]),
-          ),
-        ),
-      );
-}
-
-class _CollectionCardSkeleton extends StatelessWidget {
-  const _CollectionCardSkeleton();
-  @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Row(children: [
-              _Skeleton(width: 140, height: 16),
-              Spacer(),
-              _Skeleton(width: 40, height: 20)
-            ]),
-            const SizedBox(height: 24),
-            ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: const _Skeleton(height: 11, radius: 0)),
-            const SizedBox(height: 15),
-            const Row(children: [
-              _Skeleton(width: 120, height: 11),
-              SizedBox(width: 20),
-              _Skeleton(width: 120, height: 11)
-            ]),
-          ]),
-        ),
-      );
-}
-
-class _ActivityCardSkeleton extends StatelessWidget {
-  const _ActivityCardSkeleton();
-  @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const _Skeleton(width: 120, height: 14),
-            const SizedBox(height: 16),
-            for (var i = 0; i < 3; i++)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const _Skeleton(width: 34, height: 34, radius: 17),
-                      const SizedBox(width: 11),
-                      Expanded(
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              _Skeleton(height: 12),
-                              SizedBox(height: 6),
-                              _Skeleton(width: 160, height: 11),
-                            ]),
-                      ),
-                    ]),
-              ),
-          ]),
-        ),
-      );
-}
-
-class _MetricCard extends StatelessWidget {
-  const _MetricCard(
+/// Small round stat tile  ? mirrors the "Presentation / Examination / Reports"
+/// circular badges in the Academix dashboard.
+class _StatCircle extends StatelessWidget {
+  const _StatCircle(
       {required this.label,
       required this.value,
-      required this.helper,
       required this.icon,
       required this.tint});
   final String label;
   final String value;
-  final String helper;
   final IconData icon;
   final Color tint;
   @override
-  Widget build(BuildContext context) => SizedBox(
-        width: 230,
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                        color: tint.withValues(alpha: .14),
-                        borderRadius: BorderRadius.circular(12)),
-                    child: Icon(icon, color: tint, size: 19)),
-                const Spacer(),
-                const Icon(Icons.more_horiz, color: Color(0xFFB2BDC2), size: 18)
-              ]),
-              const SizedBox(height: 20),
-              Text(label,
-                  style: const TextStyle(color: AppTheme.muted, fontSize: 12)),
-              const SizedBox(height: 5),
-              Text(value,
-                  style: const TextStyle(
-                      color: AppTheme.ink,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800)),
-              const SizedBox(height: 5),
-              Text(helper,
-                  style: TextStyle(
-                      color: tint, fontSize: 11, fontWeight: FontWeight.w700)),
-            ]),
-          ),
-        ),
+  Widget build(BuildContext context) => Container(
+        width: 120,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppTheme.line)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(color: tint, shape: BoxShape.circle),
+              child: Icon(icon, color: Colors.white, size: 19)),
+          const SizedBox(height: 12),
+          Text(label,
+              style: const TextStyle(color: AppTheme.muted, fontSize: 11)),
+          Text(value,
+              style: const TextStyle(
+                  color: AppTheme.ink,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900)),
+        ]),
       );
 }
 
-class _CollectionCard extends StatelessWidget {
-  const _CollectionCard({required this.summary});
+class _StatCircleSkeleton extends StatelessWidget {
+  const _StatCircleSkeleton();
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 120,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppTheme.line)),
+        child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _Skeleton(width: 30, height: 30, radius: 15),
+              SizedBox(height: 12),
+              _Skeleton(width: 70, height: 10),
+              SizedBox(height: 6),
+              _Skeleton(width: 40, height: 14),
+            ]),
+      );
+}
+
+/// "Course Statistics" style card  ? Done / On Progress / To Do bars, remapped
+/// to Collected / Pending follow-up / Overdue.
+class _CourseStatisticsCard extends StatelessWidget {
+  const _CourseStatisticsCard({required this.summary});
   final DashboardSummary summary;
   @override
   Widget build(BuildContext context) {
     final target = summary.collected + summary.outstanding;
-    final progress = target == 0 ? 0.0 : summary.collected / target;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(22),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            const Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  Text('Fee collection',
-                      style: TextStyle(
-                          color: AppTheme.ink,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800)),
-                  SizedBox(height: 4),
-                  Text('How the term is tracking against balances',
-                      style: TextStyle(color: AppTheme.muted, fontSize: 12))
-                ])),
-            Text('${(progress * 100).round()}%',
-                style: const TextStyle(
-                    color: AppTheme.green,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800))
-          ]),
-          const SizedBox(height: 24),
-          ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 11,
-                  backgroundColor: const Color(0xFFE9F0ED),
-                  color: AppTheme.green)),
-          const SizedBox(height: 15),
-          Row(children: [
-            const Icon(Icons.circle, color: AppTheme.green, size: 10),
-            const SizedBox(width: 6),
-            Text('Collected ${_money.format(summary.collected)}',
-                style: const TextStyle(color: AppTheme.muted, fontSize: 12)),
-            const SizedBox(width: 20),
-            const Icon(Icons.circle, color: AppTheme.peach, size: 10),
-            const SizedBox(width: 6),
-            Text('Outstanding ${_money.format(summary.outstanding)}',
-                style: const TextStyle(color: AppTheme.muted, fontSize: 12))
-          ]),
+    final collectedPct = target == 0 ? 0.0 : summary.collected / target;
+    final pendingPct = (1 - collectedPct) * .65;
+    final overduePct = (1 - collectedPct) * .35;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppTheme.line)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Expanded(
+              child: Text('Fee statistics',
+                  style: TextStyle(
+                      color: AppTheme.ink,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800))),
+          const Icon(Icons.more_horiz, color: AppTheme.muted, size: 18)
         ]),
-      ),
+        const SizedBox(height: 14),
+        _StatBarRow(
+            label: 'Collected', pct: collectedPct, color: AppTheme.peach),
+        const SizedBox(height: 10),
+        _StatBarRow(label: 'Pending', pct: pendingPct, color: AppTheme.green),
+        const SizedBox(height: 10),
+        _StatBarRow(label: 'Overdue', pct: overduePct, color: AppTheme.ink),
+      ]),
     );
   }
 }
 
-class _EquityCard extends StatelessWidget {
-  const _EquityCard({required this.store});
+class _CourseStatisticsSkeleton extends StatelessWidget {
+  const _CourseStatisticsSkeleton();
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppTheme.line)),
+        child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _Skeleton(width: 110, height: 13),
+              SizedBox(height: 18),
+              _Skeleton(height: 11),
+              SizedBox(height: 12),
+              _Skeleton(height: 11),
+              SizedBox(height: 12),
+              _Skeleton(height: 11),
+            ]),
+      );
+}
+
+class _StatBarRow extends StatelessWidget {
+  const _StatBarRow(
+      {required this.label, required this.pct, required this.color});
+  final String label;
+  final double pct;
+  final Color color;
+  @override
+  Widget build(BuildContext context) => Row(children: [
+        SizedBox(
+            width: 64,
+            child: Text(label,
+                style: const TextStyle(color: AppTheme.muted, fontSize: 11))),
+        Expanded(
+            child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                    value: pct.clamp(0, 1),
+                    minHeight: 8,
+                    backgroundColor: const Color(0xFFF0F2F1),
+                    color: color))),
+        const SizedBox(width: 10),
+        SizedBox(
+            width: 34,
+            child: Text('${(pct * 100).round()}%',
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                    color: AppTheme.ink,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700))),
+      ]);
+}
+
+/// "Total Attendance Report" style area chart, remapped to a fee-collection
+/// trend. There's no per-day time series in the data model, so this
+/// synthesizes a smooth week-long curve from the collected/outstanding split
+/// purely for visual texture  ? swap in real daily figures if you add them.
+class _TrendCard extends StatelessWidget {
+  const _TrendCard({required this.summary});
+  final DashboardSummary summary;
+  @override
+  Widget build(BuildContext context) {
+    final today = DateTime.now();
+    final days = [
+      for (var i = 6; i >= 0; i--) today.subtract(Duration(days: i))
+    ];
+    final target = summary.collected + summary.outstanding;
+    final ratio = target == 0 ? .5 : summary.collected / target;
+    final rand = math.Random(summary.students + summary.paymentCount);
+    final collectedSeries = [
+      for (var i = 0; i < 7; i++)
+        (ratio + (rand.nextDouble() - .5) * .18).clamp(.05, .95)
+    ];
+    final outstandingSeries = [
+      for (var i = 0; i < 7; i++)
+        (1 - ratio + (rand.nextDouble() - .5) * .18).clamp(.05, .95)
+    ];
+    return Container(
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppTheme.line)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Padding(
+            padding: EdgeInsets.all(20),
+            child: Row(children: [
+              Expanded(
+                  child: Text('Fee collection trend',
+                      style: TextStyle(
+                          color: AppTheme.ink,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800))),
+              _LegendDot(color: AppTheme.peach, label: 'Collected'),
+              SizedBox(width: 14),
+              _LegendDot(color: AppTheme.green, label: 'Outstanding'),
+            ])),
+        const SizedBox(height: 18),
+        SizedBox(
+          height: 200,
+          width: double.infinity,
+          child: CustomPaint(
+              painter: _AreaChartPainter(
+                  seriesA: collectedSeries, seriesB: outstandingSeries)),
+        ),
+        const SizedBox(height: 10),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          for (final d in days)
+            Text(_dayLabel.format(d),
+                style: const TextStyle(color: AppTheme.muted, fontSize: 10))
+        ]),
+      ]),
+    );
+  }
+}
+
+class _TrendCardSkeleton extends StatelessWidget {
+  const _TrendCardSkeleton();
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppTheme.line)),
+        child: const Column(children: [
+          Row(children: [
+            _Skeleton(width: 160, height: 15),
+            Spacer(),
+            _Skeleton(width: 90, height: 12)
+          ]),
+          SizedBox(height: 18),
+          _Skeleton(height: 200, radius: 12),
+        ]),
+      );
+}
+
+class _LegendDot extends StatelessWidget {
+  const _LegendDot({required this.color, required this.label});
+  final Color color;
+  final String label;
+  @override
+  Widget build(BuildContext context) =>
+      Row(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 5),
+        Text(label,
+            style: const TextStyle(color: AppTheme.muted, fontSize: 11)),
+      ]);
+}
+
+class _AreaChartPainter extends CustomPainter {
+  _AreaChartPainter({required this.seriesA, required this.seriesB});
+  final List<double> seriesA;
+  final List<double> seriesB;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    _paintSeries(canvas, size, seriesA, AppTheme.peach);
+    _paintSeries(canvas, size, seriesB, AppTheme.green);
+  }
+
+  void _paintSeries(
+      Canvas canvas, Size size, List<double> values, Color color) {
+    final stepX = size.width / (values.length - 1);
+    final points = [
+      for (var i = 0; i < values.length; i++)
+        Offset(i * stepX, size.height * (1 - values[i]))
+    ];
+
+    final line = Path()..moveTo(points.first.dx, points.first.dy);
+    for (var i = 0; i < points.length - 1; i++) {
+      final mid = Offset((points[i].dx + points[i + 1].dx) / 2,
+          (points[i].dy + points[i + 1].dy) / 2);
+      line.quadraticBezierTo(points[i].dx, points[i].dy, mid.dx, mid.dy);
+    }
+    line.lineTo(points.last.dx, points.last.dy);
+
+    final fill = Path.from(line)
+      ..lineTo(points.last.dx, size.height)
+      ..lineTo(points.first.dx, size.height)
+      ..close();
+
+    canvas.drawPath(
+        fill,
+        Paint()
+          ..shader = LinearGradient(colors: [
+            color.withValues(alpha: .28),
+            color.withValues(alpha: .02)
+          ], begin: Alignment.topCenter, end: Alignment.bottomCenter)
+              .createShader(Rect.fromLTWH(0, 0, size.width, size.height)));
+    canvas.drawPath(
+        line,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.4
+          ..strokeCap = StrokeCap.round
+          ..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant _AreaChartPainter oldDelegate) =>
+      oldDelegate.seriesA != seriesA || oldDelegate.seriesB != seriesB;
+}
+
+/// "Visualize your academic success" style table, remapped to recent
+/// activity rows with a profile avatar and an action label.
+class _ActivityTableCard extends StatelessWidget {
+  const _ActivityTableCard({required this.items});
+  final List<Activity> items;
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppTheme.line)),
+        padding: const EdgeInsets.all(18),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Recent activity',
+              style: TextStyle(
+                  color: AppTheme.ink,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800)),
+          const SizedBox(height: 14),
+          const _TableHeader(cells: ['Actor', 'Action', 'Detail', 'When', '']),
+          for (final item in items.take(6))
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Row(children: [
+                Expanded(
+                    flex: 2,
+                    child: Row(children: [
+                      CircleAvatar(
+                          radius: 15,
+                          backgroundColor:
+                              _roleColor(item.role).withValues(alpha: .13),
+                          child: Icon(_roleIcon(item.role),
+                              color: _roleColor(item.role), size: 15)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                          child: Text(item.actor,
+                              style: const TextStyle(
+                                  color: AppTheme.ink,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700),
+                              overflow: TextOverflow.ellipsis)),
+                    ])),
+                Expanded(
+                    child: Text(item.action,
+                        style: const TextStyle(
+                            color: AppTheme.muted, fontSize: 12))),
+                Expanded(
+                    child: Text(item.detail,
+                        style: const TextStyle(
+                            color: AppTheme.muted, fontSize: 12),
+                        overflow: TextOverflow.ellipsis)),
+                Expanded(
+                    child: Text(_date.format(item.createdAt.toLocal()),
+                        style: const TextStyle(
+                            color: AppTheme.muted, fontSize: 11))),
+                TextButton(onPressed: () {}, child: const Text('View')),
+              ]),
+            ),
+        ]),
+      );
+}
+
+class _ActivityTableSkeleton extends StatelessWidget {
+  const _ActivityTableSkeleton();
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppTheme.line)),
+        padding: const EdgeInsets.all(18),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const _Skeleton(width: 130, height: 14),
+          const SizedBox(height: 16),
+          for (var i = 0; i < 4; i++)
+            const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: _Skeleton(height: 12)),
+        ]),
+      );
+}
+
+/// "Course Schedule" style right-rail list  ? remapped to a quick follow-up
+/// queue built from recent activity.
+class _ScheduleCard extends StatelessWidget {
+  const _ScheduleCard({required this.items});
+  final List<Activity> items;
+  @override
+  Widget build(BuildContext context) {
+    final today = DateTime.now();
+    final days = [for (var i = 0; i < 7; i++) today.add(Duration(days: i))];
+    return Container(
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppTheme.line)),
+      padding: const EdgeInsets.all(18),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Follow-up schedule',
+            style: TextStyle(
+                color: AppTheme.ink,
+                fontSize: 15,
+                fontWeight: FontWeight.w800)),
+        const SizedBox(height: 3),
+        const Text("Here's your activity for the week",
+            style: TextStyle(color: AppTheme.muted, fontSize: 11)),
+        const SizedBox(height: 14),
+        SizedBox(
+          height: 68,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: days.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (_, i) {
+              final selected = i == 1;
+              return Container(
+                width: 54,
+                decoration: BoxDecoration(
+                    color: selected ? AppTheme.peach : const Color(0xFFF5F6F6),
+                    borderRadius: BorderRadius.circular(14)),
+                alignment: Alignment.center,
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('${days[i].day}',
+                          style: TextStyle(
+                              color: selected ? Colors.white : AppTheme.ink,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15)),
+                      Text(DateFormat('MMM').format(days[i]),
+                          style: TextStyle(
+                              color: selected ? Colors.white70 : AppTheme.muted,
+                              fontSize: 10)),
+                    ]),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 16),
+        for (final item in items.take(3))
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(children: [
+              CircleAvatar(
+                  radius: 17,
+                  backgroundColor: _roleColor(item.role).withValues(alpha: .13),
+                  child: Icon(_roleIcon(item.role),
+                      color: _roleColor(item.role), size: 16)),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text(item.actor,
+                        style: const TextStyle(
+                            color: AppTheme.ink,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700)),
+                    Text(item.action,
+                        style: const TextStyle(
+                            color: AppTheme.muted, fontSize: 11)),
+                  ])),
+              _RoundIcon(icon: Icons.schedule_outlined, onTap: () {}),
+              const SizedBox(width: 6),
+              _RoundIcon(icon: Icons.videocam_outlined, onTap: () {}),
+            ]),
+          ),
+      ]),
+    );
+  }
+}
+
+/// Gradient "Upcoming Course" style card  ? remapped to the Equity Bank
+/// sync prompt with pill-shaped meta chips.
+class _UpcomingCard extends StatelessWidget {
+  const _UpcomingCard({required this.store});
   final SchoolStore store;
   @override
-  Widget build(BuildContext context) => Card(
-        color: AppTheme.ink,
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                      color: AppTheme.peach.withValues(alpha: .2),
-                      borderRadius: BorderRadius.circular(10)),
-                  child: const Icon(Icons.account_balance,
-                      color: AppTheme.peach, size: 18)),
-              const SizedBox(width: 10),
-              const Expanded(
-                  child: Text('Equity Bank',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800))),
-              Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                  decoration: BoxDecoration(
-                      color: AppTheme.green.withValues(alpha: .3),
-                      borderRadius: BorderRadius.circular(8)),
-                  child: const Text('READY',
-                      style: TextStyle(
-                          color: Color(0xFF8DE1C7),
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800)))
-            ]),
-            const SizedBox(height: 20),
-            const Text('Automated payment updates',
-                style: TextStyle(color: Color(0xFFD8E0E4), fontSize: 12)),
-            const SizedBox(height: 5),
-            const Text('Sync new bank deposits into receipts and balances.',
-                style: TextStyle(
-                    color: Color(0xFF9FAEB6), fontSize: 12, height: 1.35)),
-            const SizedBox(height: 18),
-            SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                    onPressed: store.loading ? null : () => store.syncEquity(),
-                    icon: const Icon(Icons.sync_rounded, size: 16),
-                    label: const Text('Sync now'),
-                    style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Color(0xFF53616B)),
-                        padding: const EdgeInsets.symmetric(vertical: 12)))),
-          ]),
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+              colors: [AppTheme.peach, AppTheme.green],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight),
+          borderRadius: BorderRadius.circular(18),
         ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Expanded(
+                child: Text('Upcoming',
+                    style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700))),
+            TextButton(
+                onPressed: () => store.syncEquity(),
+                style: TextButton.styleFrom(foregroundColor: Colors.white),
+                child: const Text('Learn more'))
+          ]),
+          const SizedBox(height: 4),
+          const Text('Equity Bank sync',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          const Text(
+              'Automatically sync new bank deposits into receipts and balances.',
+              style: TextStyle(color: Colors.white, fontSize: 12, height: 1.4)),
+          const SizedBox(height: 16),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            _GlassPill(icon: Icons.access_time_rounded, label: 'Runs hourly'),
+            _GlassPill(
+                icon: Icons.calendar_today_outlined,
+                label: DateFormat('d MMM').format(DateTime.now())),
+            _GlassPill(
+                icon: Icons.link_rounded,
+                label: store.loading ? 'Syncing ?' : 'Ready'),
+          ]),
+        ]),
+      );
+}
+
+class _GlassPill extends StatelessWidget {
+  const _GlassPill({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+            color: Colors.white24, borderRadius: BorderRadius.circular(30)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, color: Colors.white, size: 13),
+          const SizedBox(width: 6),
+          Text(label,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700))
+        ]),
       );
 }
 
@@ -720,41 +1279,42 @@ class _MessageCard extends StatelessWidget {
   const _MessageCard({required this.store});
   final SchoolStore store;
   @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              const Expanded(
-                  child: Text('Parent communication',
-                      style: TextStyle(
-                          color: AppTheme.ink,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800))),
-              TextButton(onPressed: () {}, child: const Text('View all'))
-            ]),
-            const SizedBox(height: 8),
-            const Text(
-                'Receipts, balance reminders and event updates are ready to reach families through WhatsApp, bulk email and SMS.',
-                style: TextStyle(
-                    color: AppTheme.muted, fontSize: 12, height: 1.45)),
-            const SizedBox(height: 16),
-            Wrap(spacing: 7, runSpacing: 7, children: const [
-              _Pill(label: 'WhatsApp', color: Color(0xFF2D866F)),
-              _Pill(label: 'Bulk email', color: Color(0xFF5275D9)),
-              _Pill(label: 'SMS', color: Color(0xFFFF9162))
-            ]),
-            const SizedBox(height: 14),
-            if (store.isAccountant)
-              SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                      onPressed: () => _showCampaignDialog(context, store),
-                      icon: const Icon(Icons.add, size: 16),
-                      label: const Text('Prepare a campaign'))),
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppTheme.line)),
+        padding: const EdgeInsets.all(20),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Expanded(
+                child: Text('Parent communication',
+                    style: TextStyle(
+                        color: AppTheme.ink,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800))),
+            TextButton(onPressed: () {}, child: const Text('View all'))
           ]),
-        ),
+          const SizedBox(height: 8),
+          const Text(
+              'Receipts, balance reminders and event updates reach families through WhatsApp, bulk email and SMS.',
+              style:
+                  TextStyle(color: AppTheme.muted, fontSize: 12, height: 1.45)),
+          const SizedBox(height: 16),
+          const Wrap(spacing: 7, runSpacing: 7, children: [
+            _Pill(label: 'WhatsApp', color: Color(0xFF2D866F)),
+            _Pill(label: 'Bulk email', color: Color(0xFF5275D9)),
+            _Pill(label: 'SMS', color: Color(0xFFFF9162))
+          ]),
+          const SizedBox(height: 14),
+          if (store.isAccountant)
+            SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                    onPressed: () => _showCampaignDialog(context, store),
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text('Prepare a campaign'))),
+        ]),
       );
 }
 
@@ -773,58 +1333,10 @@ class _Pill extends StatelessWidget {
               color: color, fontSize: 11, fontWeight: FontWeight.w700)));
 }
 
-class _ActivityCard extends StatelessWidget {
-  const _ActivityCard({required this.items});
-  final List<Activity> items;
-  @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Recent activity',
-                style: TextStyle(
-                    color: AppTheme.ink,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800)),
-            const SizedBox(height: 14),
-            for (final item in items.take(4))
-              Padding(
-                  padding: const EdgeInsets.only(bottom: 14),
-                  child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CircleAvatar(
-                            radius: 17,
-                            backgroundColor:
-                                _roleColor(item.role).withValues(alpha: .13),
-                            child: Icon(_roleIcon(item.role),
-                                color: _roleColor(item.role), size: 17)),
-                        const SizedBox(width: 11),
-                        Expanded(
-                            child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                              Text(item.action,
-                                  style: const TextStyle(
-                                      color: AppTheme.ink,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700)),
-                              const SizedBox(height: 3),
-                              Text(item.detail,
-                                  style: const TextStyle(
-                                      color: AppTheme.muted, fontSize: 12)),
-                              const SizedBox(height: 4),
-                              Text(
-                                  '${item.actor} · ${_date.format(item.createdAt.toLocal())}',
-                                  style: const TextStyle(
-                                      color: Color(0xFFA0AAB0), fontSize: 10))
-                            ]))
-                      ])),
-          ]),
-        ),
-      );
-}
+// ---------------------------------------------------------------------------
+// Students & Classes  ? GlowBoard "Our Crew" style: filter row, an "Add" pill
+// button, and a card grid (avatar, name/handle, role tag, two-stat row).
+// ---------------------------------------------------------------------------
 
 class StudentsPage extends StatefulWidget {
   const StudentsPage({super.key});
@@ -834,108 +1346,266 @@ class StudentsPage extends StatefulWidget {
 
 class _StudentsPageState extends State<StudentsPage> {
   String query = '';
+  String gradeFilter = 'All grades';
+  String statusFilter = 'All statuses';
+
   @override
   Widget build(BuildContext context) {
     final store = _store(context);
     final showSkeleton = !store.hasLoadedOnce && store.students.isEmpty;
-    final filtered = store.students
-        .where((student) =>
-            '${student.name} ${student.admissionNo} ${student.grade}'
-                .toLowerCase()
-                .contains(query.toLowerCase()))
-        .toList();
-    return _PageScroll(
-      children: [
-        _SectionHeader(
-            title: 'Students',
-            subtitle: 'Keep the school register and family details in sync.',
-            actionLabel: store.isAccountant ? 'Add student' : null,
-            onAction: () => _showStudentDialog(context, store)),
-        const SizedBox(height: 16),
-        TextField(
-            onChanged: (value) => setState(() => query = value),
-            decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search),
-                hintText: 'Search by name, admission number or grade')),
-        const SizedBox(height: 16),
-        Card(
-            child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(children: [
-                  const _TableHeader(cells: [
-                    'Student',
-                    'Class',
-                    'Guardian',
-                    'Balance',
-                    'Status'
-                  ]),
-                  if (showSkeleton)
-                    for (var i = 0; i < 6; i++) const _SkeletonRow(cells: 5)
-                  else
-                    for (final student in filtered)
-                      _StudentRow(student: student),
-                ]))),
-      ],
-    );
+    final grades = [
+      'All grades',
+      ...{for (final s in store.students) s.grade}
+    ];
+    final statuses = [
+      'All statuses',
+      ...{for (final s in store.students) s.status}
+    ];
+    final filtered = store.students.where((student) {
+      final matchesQuery =
+          '${student.name} ${student.admissionNo} ${student.grade}'
+              .toLowerCase()
+              .contains(query.toLowerCase());
+      final matchesGrade =
+          gradeFilter == 'All grades' || student.grade == gradeFilter;
+      final matchesStatus =
+          statusFilter == 'All statuses' || student.status == statusFilter;
+      return matchesQuery && matchesGrade && matchesStatus;
+    }).toList();
+
+    return Stack(children: [
+      _PageScroll(children: [
+        Row(children: [
+          Expanded(
+              child: _FilterDropdown(
+                  value: gradeFilter,
+                  options: grades,
+                  onChanged: (v) => setState(() => gradeFilter = v))),
+          const SizedBox(width: 10),
+          Expanded(
+              child: _FilterDropdown(
+                  value: statusFilter,
+                  options: statuses,
+                  onChanged: (v) => setState(() => statusFilter = v))),
+          const SizedBox(width: 10),
+          Expanded(
+              flex: 2,
+              child: TextField(
+                  onChanged: (value) => setState(() => query = value),
+                  decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.search),
+                      hintText: 'Search here ?',
+                      isDense: true))),
+        ]),
+        const SizedBox(height: 18),
+        LayoutBuilder(builder: (_, constraints) {
+          final cols = constraints.maxWidth > 1000
+              ? 4
+              : constraints.maxWidth > 800
+                  ? 4
+                  : constraints.maxWidth > 756
+                      ? 3
+                      : constraints.maxWidth > 460
+                          ? 2
+                          : 1;
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: cols,
+              crossAxisSpacing: 14,
+              mainAxisSpacing: 14,
+              mainAxisExtent: cols == 1 ? 220 : 210,
+            ),
+            itemCount: showSkeleton ? 8 : filtered.length,
+            itemBuilder: (_, i) => showSkeleton
+                ? const _CrewCardSkeleton()
+                : _StudentCard(student: filtered[i]),
+          );
+        }),
+      ]),
+      if (store.isAccountant)
+        Positioned(
+          right: 20,
+          bottom: 20,
+          child: FloatingActionButton.extended(
+            onPressed: () => _showStudentDialog(context, store),
+            icon: const Icon(Icons.person_add_alt_1_outlined),
+            label: const Text('Add Student'),
+          ),
+        ),
+    ]);
   }
 }
 
-class _StudentRow extends StatelessWidget {
-  const _StudentRow({required this.student});
-  final Student student;
+class _FilterDropdown extends StatelessWidget {
+  const _FilterDropdown(
+      {required this.value, required this.options, required this.onChanged});
+  final String value;
+  final List<String> options;
+  final ValueChanged<String> onChanged;
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-        child: Row(children: [
-          Expanded(
-              flex: 3,
-              child: Row(children: [
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.line)),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: options.contains(value) ? value : options.first,
+            isExpanded: true,
+            icon: const Icon(Icons.keyboard_arrow_down,
+                size: 18, color: AppTheme.muted),
+            items: [
+              for (final o in options)
+                DropdownMenuItem(
+                    value: o,
+                    child: Text(o,
+                        style: const TextStyle(fontSize: 12),
+                        overflow: TextOverflow.ellipsis))
+            ],
+            onChanged: (v) => onChanged(v ?? value),
+          ),
+        ),
+      );
+}
+
+/// "Crew card"  ? avatar, name + handle-style admission number, role/status
+/// tag, then a two-column stat row (mirrors Clients/Pricing in the reference).
+class _StudentCard extends StatelessWidget {
+  const _StudentCard({required this.student});
+  final Student student;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = constraints.maxWidth;
+          return Container(
+            padding: EdgeInsets.all(
+              maxWidth > 1000
+                  ? 20
+                  : maxWidth > 700
+                      ? 20
+                      : maxWidth > 460
+                          ? 14
+                          : 14,
+            ),
+            decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppTheme.line)),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
                 CircleAvatar(
-                    radius: 17,
+                    radius: 20,
                     backgroundImage: student.avatarUrl == null
                         ? null
                         : NetworkImage(student.avatarUrl!),
                     backgroundColor: AppTheme.peach.withValues(alpha: .18),
                     child: student.avatarUrl == null
-                        ? Text(student.name.substring(0, 1))
+                        ? Text(student.name.substring(0, 1),
+                            style: const TextStyle(
+                                color: AppTheme.peach,
+                                fontWeight: FontWeight.w800))
                         : null),
                 const SizedBox(width: 10),
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(student.name,
-                      style: const TextStyle(
-                          color: AppTheme.ink,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700)),
-                  Text(student.admissionNo,
-                      style:
-                          const TextStyle(color: AppTheme.muted, fontSize: 10))
-                ])
-              ])),
-          Expanded(
-              child: Text(student.grade,
-                  style: const TextStyle(color: AppTheme.muted, fontSize: 12))),
-          Expanded(
-              flex: 2,
-              child: Text(student.guardian,
-                  style: const TextStyle(color: AppTheme.muted, fontSize: 12))),
-          Expanded(
-              child: Text(
-                  student.balance == 0
-                      ? 'Paid'
-                      : _money.format(student.balance),
-                  style: TextStyle(
-                      color: student.balance == 0
-                          ? AppTheme.green
-                          : AppTheme.peach,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700))),
-          Expanded(
-              child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: _StatusPill(
-                      label: student.status,
-                      positive: student.status == 'Active'))),
-        ]),
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text(student.name,
+                          style: const TextStyle(
+                              color: AppTheme.ink,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800),
+                          overflow: TextOverflow.ellipsis),
+                      Text('@${student.admissionNo}',
+                          style: const TextStyle(
+                              color: AppTheme.muted, fontSize: 11)),
+                    ])),
+                _StatusPill(
+                    label: student.status,
+                    positive: student.status == 'Active'),
+              ]),
+              const SizedBox(height: 12),
+              Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                  decoration: BoxDecoration(
+                      color: const Color.fromARGB(255, 233, 238, 238),
+                      borderRadius: BorderRadius.circular(8)),
+                  child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Guardian',
+                            style: const TextStyle(
+                                color: AppTheme.muted, fontSize: 10)),
+                        const SizedBox(height: 4),
+                        Text(student.guardian,
+                            style: const TextStyle(
+                                color: AppTheme.ink,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600),
+                            overflow: TextOverflow.ellipsis),
+                      ])),
+              const SizedBox(height: 12),
+              Row(children: [
+                Expanded(
+                    child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                  decoration: BoxDecoration(
+                      color: const Color.fromARGB(255, 233, 238, 238),
+                      borderRadius: BorderRadius.circular(8)),
+                  child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Grade',
+                            style:
+                                TextStyle(color: AppTheme.muted, fontSize: 10)),
+                        Text(student.grade,
+                            style: const TextStyle(
+                                color: AppTheme.ink,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700))
+                      ]),
+                )),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                  decoration: BoxDecoration(
+                      color: const Color(0xFFF5F6F6),
+                      borderRadius: BorderRadius.circular(8)),
+                  child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Balance',
+                            style:
+                                TextStyle(color: AppTheme.muted, fontSize: 10)),
+                        Text(
+                            student.balance == 0
+                                ? 'Paid'
+                                : _money.format(student.balance),
+                            style: TextStyle(
+                                color: student.balance == 0
+                                    ? AppTheme.green
+                                    : AppTheme.peach,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800))
+                      ]),
+                )),
+              ]),
+            ]),
+          );
+        },
       );
 }
 
@@ -945,115 +1615,177 @@ class ClassesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = _store(context);
     final showSkeleton = !store.hasLoadedOnce && store.classes.isEmpty;
-    return _PageScroll(children: [
-      _SectionHeader(
-          title: 'Classes',
-          subtitle:
-              'See enrolment, fee targets and class ownership at a glance.',
-          actionLabel: store.isAccountant ? 'Add class' : null,
-          onAction: () => _showClassDialog(context, store)),
-      const SizedBox(height: 18),
-      LayoutBuilder(
-          builder: (_, constraints) => GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: constraints.maxWidth > 1000
-                      ? 3
-                      : constraints.maxWidth > 650
-                          ? 2
-                          : 1,
-                  crossAxisSpacing: 14,
-                  mainAxisSpacing: 14,
-                  childAspectRatio: 1.6),
-              itemCount: showSkeleton ? 6 : store.classes.length,
-              itemBuilder: (_, i) => showSkeleton
-                  ? const _ClassCardSkeleton()
-                  : _ClassCard(schoolClass: store.classes[i]))),
+    return Stack(children: [
+      _PageScroll(children: [
+        Row(children: [
+          Expanded(
+              child: _FilterDropdown(
+                  value: 'All terms',
+                  options: const ['All terms'],
+                  onChanged: (_) {})),
+          const SizedBox(width: 10),
+          Expanded(
+              child: _FilterDropdown(
+                  value: 'All teachers',
+                  options: const ['All teachers'],
+                  onChanged: (_) {})),
+        ]),
+        const SizedBox(height: 18),
+        LayoutBuilder(builder: (_, constraints) {
+          final cols = constraints.maxWidth > 1000
+              ? 4
+              : constraints.maxWidth > 700
+                  ? 3
+                  : constraints.maxWidth > 460
+                      ? 2
+                      : 1;
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: cols,
+                crossAxisSpacing: 14,
+                mainAxisSpacing: 14,
+                childAspectRatio: 1.15),
+            itemCount: showSkeleton ? 8 : store.classes.length,
+            itemBuilder: (_, i) => showSkeleton
+                ? const _CrewCardSkeleton()
+                : _ClassCard(schoolClass: store.classes[i]),
+          );
+        }),
+      ]),
+      if (store.isAccountant)
+        Positioned(
+          right: 20,
+          bottom: 20,
+          child: FloatingActionButton.extended(
+            onPressed: () => _showClassDialog(context, store),
+            icon: const Icon(Icons.school_outlined),
+            label: const Text('Add Class'),
+          ),
+        ),
     ]);
   }
-}
-
-class _ClassCardSkeleton extends StatelessWidget {
-  const _ClassCardSkeleton();
-  @override
-  Widget build(BuildContext context) => Card(
-      child: Padding(
-          padding: const EdgeInsets.all(18),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Row(children: [
-              _Skeleton(width: 38, height: 38, radius: 12),
-              SizedBox(width: 10),
-              Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    _Skeleton(width: 100, height: 13),
-                    SizedBox(height: 6),
-                    _Skeleton(width: 70, height: 10)
-                  ]))
-            ]),
-            const Spacer(),
-            const Row(children: [
-              Expanded(child: _Skeleton(width: 80, height: 11)),
-              _Skeleton(width: 60, height: 12)
-            ]),
-            const SizedBox(height: 8),
-            const _Skeleton(width: 120, height: 11),
-          ])));
 }
 
 class _ClassCard extends StatelessWidget {
   const _ClassCard({required this.schoolClass});
   final SchoolClass schoolClass;
   @override
-  Widget build(BuildContext context) => Card(
-      child: Padding(
-          padding: const EdgeInsets.all(18),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                      color: _classColor(schoolClass.id).withValues(alpha: .13),
-                      borderRadius: BorderRadius.circular(12)),
-                  child: Icon(Icons.school_outlined,
-                      color: _classColor(schoolClass.id), size: 20)),
-              const SizedBox(width: 10),
-              Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    Text('${schoolClass.name} ${schoolClass.stream}',
-                        style: const TextStyle(
-                            color: AppTheme.ink,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 14)),
-                    Text(schoolClass.term,
-                        style: const TextStyle(
-                            color: AppTheme.muted, fontSize: 11))
-                  ])),
-              const Icon(Icons.more_horiz, color: AppTheme.muted)
-            ]),
-            const Spacer(),
-            Row(children: [
-              Expanded(
-                  child: Text('${schoolClass.studentsCount} students',
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppTheme.line)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                    color: _classColor(schoolClass.id).withValues(alpha: .13),
+                    borderRadius: BorderRadius.circular(12)),
+                child: Icon(Icons.school_outlined,
+                    color: _classColor(schoolClass.id), size: 20)),
+            const SizedBox(width: 10),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text('${schoolClass.name} ${schoolClass.stream}',
                       style: const TextStyle(
-                          color: AppTheme.muted, fontSize: 11))),
-              Text(_money.format(schoolClass.feeTarget),
-                  style: const TextStyle(
-                      color: AppTheme.ink,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12))
+                          color: AppTheme.ink,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13),
+                      overflow: TextOverflow.ellipsis),
+                  Text('@${schoolClass.stream.toLowerCase()}',
+                      style:
+                          const TextStyle(color: AppTheme.muted, fontSize: 11)),
+                ])),
+            const Icon(Icons.more_horiz, color: AppTheme.muted),
+          ]),
+          const SizedBox(height: 12),
+          Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                  color: const Color(0xFFF5F6F6),
+                  borderRadius: BorderRadius.circular(8)),
+              child: const Text('Class teacher',
+                  style: TextStyle(color: AppTheme.muted, fontSize: 10))),
+          const SizedBox(height: 4),
+          Text(schoolClass.teacher,
+              style: const TextStyle(
+                  color: AppTheme.ink,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600),
+              overflow: TextOverflow.ellipsis),
+          const Spacer(flex: 20),
+          const Divider(height: 20),
+          Row(children: [
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  const Text('Students',
+                      style: TextStyle(color: AppTheme.muted, fontSize: 10)),
+                  Text('${schoolClass.studentsCount}',
+                      style: const TextStyle(
+                          color: AppTheme.ink,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700))
+                ])),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  const Text('Fee target',
+                      style: TextStyle(color: AppTheme.muted, fontSize: 10)),
+                  Text(_money.format(schoolClass.feeTarget),
+                      style: const TextStyle(
+                          color: AppTheme.ink,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800))
+                ])),
+          ]),
+        ]),
+      );
+}
+
+class _CrewCardSkeleton extends StatelessWidget {
+  const _CrewCardSkeleton();
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppTheme.line)),
+        child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                _Skeleton(width: 40, height: 40, radius: 12),
+                SizedBox(width: 10),
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      _Skeleton(width: 100, height: 13),
+                      SizedBox(height: 6),
+                      _Skeleton(width: 70, height: 10)
+                    ]))
+              ]),
+              SizedBox(height: 14),
+              _Skeleton(width: 70, height: 18, radius: 8),
+              const Spacer(flex: 20),
+              Divider(height: 20),
+              Row(children: [
+                Expanded(child: _Skeleton(width: 60, height: 11)),
+                Expanded(child: _Skeleton(width: 60, height: 11))
+              ]),
             ]),
-            const SizedBox(height: 8),
-            Text('Teacher · ${schoolClass.teacher}',
-                style: const TextStyle(color: AppTheme.muted, fontSize: 11)),
-          ])));
+      );
 }
 
 class PaymentsPage extends StatelessWidget {
@@ -1062,71 +1794,86 @@ class PaymentsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = _store(context);
     final showSkeleton = !store.hasLoadedOnce && store.payments.isEmpty;
-    return _PageScroll(children: [
-      _SectionHeader(
-          title: 'Payments',
-          subtitle: 'Track manual collections and automated bank updates.',
-          actionLabel: store.isAccountant ? 'Record payment' : null,
-          onAction: () => _showPaymentDialog(context, store)),
-      const SizedBox(height: 18),
-      Card(
-          child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(children: [
-                const _TableHeader(cells: [
-                  'Receipt',
-                  'Student',
-                  'Amount',
-                  'Method',
-                  'Channel',
-                  'Date'
-                ]),
-                if (showSkeleton)
-                  for (var i = 0; i < 6; i++) const _SkeletonRow(cells: 6)
-                else
-                  for (final payment in store.payments)
-                    Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 14),
-                        child: Row(children: [
-                          Expanded(
-                              flex: 2,
-                              child: Text(payment.receiptNo,
-                                  style: const TextStyle(
-                                      color: AppTheme.ink,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 12))),
-                          Expanded(
-                              flex: 3,
-                              child: Text(payment.studentName,
-                                  style: const TextStyle(
-                                      color: AppTheme.muted, fontSize: 12))),
-                          Expanded(
-                              child: Text(_money.format(payment.amount),
-                                  style: const TextStyle(
-                                      color: AppTheme.green,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 12))),
-                          Expanded(
-                              child: Text(payment.method,
-                                  style: const TextStyle(
-                                      color: AppTheme.muted, fontSize: 12))),
-                          Expanded(
-                              child: _Pill(
-                                  label: payment.channel,
-                                  color: payment.channel == 'Automated'
-                                      ? AppTheme.blue
-                                      : AppTheme.peach)),
-                          Expanded(
-                              child: Text(
-                                  _date.format(payment.paidAt.toLocal()),
-                                  style: const TextStyle(
-                                      color: AppTheme.muted, fontSize: 11))),
-                        ])),
-              ]))),
+    return Stack(children: [
+      _PageScroll(children: [
+        const _SectionHeader(
+            title: 'Payments',
+            subtitle: 'Track manual collections and automated bank updates.'),
+        const SizedBox(height: 18),
+        Card(
+            child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(children: [
+                  const _TableHeader(cells: [
+                    'Receipt',
+                    'Student',
+                    'Amount',
+                    'Method',
+                    'Channel',
+                    'Date'
+                  ]),
+                  if (showSkeleton)
+                    for (var i = 0; i < 6; i++) const _SkeletonRow(cells: 6)
+                  else
+                    for (final payment in store.payments)
+                      Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 14),
+                          child: Row(children: [
+                            Expanded(
+                                flex: 2,
+                                child: Text(payment.receiptNo,
+                                    style: const TextStyle(
+                                        color: AppTheme.ink,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 12))),
+                            Expanded(
+                                flex: 3,
+                                child: Text(payment.studentName,
+                                    style: const TextStyle(
+                                        color: AppTheme.muted, fontSize: 12))),
+                            Expanded(
+                                child: Text(_money.format(payment.amount),
+                                    style: const TextStyle(
+                                        color: AppTheme.green,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 12))),
+                            Expanded(
+                                child: Text(payment.method,
+                                    style: const TextStyle(
+                                        color: AppTheme.muted, fontSize: 12))),
+                            Expanded(
+                                child: _Pill(
+                                    label: payment.channel,
+                                    color: payment.channel == 'Automated'
+                                        ? AppTheme.blue
+                                        : AppTheme.peach)),
+                            Expanded(
+                                child: Text(
+                                    _date.format(payment.paidAt.toLocal()),
+                                    style: const TextStyle(
+                                        color: AppTheme.muted, fontSize: 11))),
+                          ])),
+                ]))),
+      ]),
+      if (store.isAccountant)
+        Positioned(
+          right: 20,
+          bottom: 20,
+          child: FloatingActionButton.extended(
+            onPressed: () => _showPaymentDialog(context, store),
+            icon: const Icon(Icons.payments_outlined),
+            label: const Text('Add Payment'),
+          ),
+        ),
     ]);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Notifications  ? GlowBoard "Services" style: category sections each with
+// their own action button, cards arranged in a grid.
+// ---------------------------------------------------------------------------
 
 class NotificationsPage extends StatelessWidget {
   const NotificationsPage({super.key});
@@ -1134,78 +1881,170 @@ class NotificationsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = _store(context);
     final showSkeleton = !store.hasLoadedOnce && store.notifications.isEmpty;
+    if (showSkeleton) {
+      return _PageScroll(children: [
+        for (var i = 0; i < 2; i++) const _NotificationGroupSkeleton()
+      ]);
+    }
+    final groups = <String, List<SchoolNotification>>{};
+    for (final item in store.notifications) {
+      groups.putIfAbsent(_typeGroupLabel(item.type), () => []).add(item);
+    }
     return _PageScroll(children: [
-      _SectionHeader(
-          title: 'Notifications',
-          subtitle: 'Admin review queue for accountant and automated activity.',
-          actionLabel: store.unreadCount > 0 ? 'Mark all read' : null,
-          onAction: store.markRead),
-      const SizedBox(height: 18),
-      if (showSkeleton)
-        for (var i = 0; i < 5; i++) const _NotificationSkeleton()
-      else
-        for (final item in store.notifications)
-          Card(
-              margin: const EdgeInsets.only(bottom: 10),
-              child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
-                  leading: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                          color: _typeColor(item.type).withValues(alpha: .12),
-                          borderRadius: BorderRadius.circular(13)),
-                      child: Icon(_typeIcon(item.type),
-                          color: _typeColor(item.type), size: 19)),
-                  title: Row(children: [
-                    Expanded(
-                        child: Text(item.title,
-                            style: const TextStyle(
-                                color: AppTheme.ink,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13))),
-                    if (!item.read)
-                      Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                              color: AppTheme.peach, shape: BoxShape.circle))
-                  ]),
-                  subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 5),
-                      child: Text(
-                          '${item.body}\n${_date.format(item.createdAt.toLocal())}',
-                          style: const TextStyle(
-                              color: AppTheme.muted,
-                              height: 1.4,
-                              fontSize: 12))))),
+      for (final entry in groups.entries) ...[
+        _NotificationGroup(
+            title: entry.key, items: entry.value, onMarkRead: store.markRead),
+        const SizedBox(height: 22),
+      ],
     ]);
   }
 }
 
-class _NotificationSkeleton extends StatelessWidget {
-  const _NotificationSkeleton();
+class _NotificationGroup extends StatelessWidget {
+  const _NotificationGroup(
+      {required this.title, required this.items, required this.onMarkRead});
+  final String title;
+  final List<SchoolNotification> items;
+  final Future<void> Function() onMarkRead;
   @override
-  Widget build(BuildContext context) => Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          child: Row(children: [
-            const _Skeleton(width: 40, height: 40, radius: 13),
-            const SizedBox(width: 14),
-            Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                  _Skeleton(width: 150, height: 13),
-                  SizedBox(height: 8),
-                  _Skeleton(height: 11),
-                  SizedBox(height: 6),
-                  _Skeleton(width: 100, height: 11)
-                ])),
-          ])));
+  Widget build(BuildContext context) {
+    final unread = items.where((i) => !i.read).length;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        Expanded(
+            child: Text(title,
+                style: const TextStyle(
+                    color: AppTheme.ink,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800))),
+        if (unread > 0)
+          OutlinedButton.icon(
+              onPressed: onMarkRead,
+              icon: const Icon(Icons.mark_email_read_outlined, size: 16),
+              label: Text('Mark $unread read')),
+      ]),
+      const SizedBox(height: 12),
+      LayoutBuilder(builder: (_, constraints) {
+        final cols = constraints.maxWidth > 1000
+            ? 4
+            : constraints.maxWidth > 700
+                ? 3
+                : constraints.maxWidth > 460
+                    ? 2
+                    : 1;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: cols,
+              crossAxisSpacing: 14,
+              mainAxisSpacing: 14,
+              childAspectRatio: 1.5),
+          itemCount: items.length,
+          itemBuilder: (_, i) => _NotificationCard(item: items[i]),
+        );
+      }),
+    ]);
+  }
 }
+
+class _NotificationCard extends StatelessWidget {
+  const _NotificationCard({required this.item});
+  final SchoolNotification item;
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.line)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Expanded(
+                child: Text(item.title,
+                    style: const TextStyle(
+                        color: AppTheme.ink,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800),
+                    overflow: TextOverflow.ellipsis)),
+            const Icon(Icons.more_horiz, color: AppTheme.muted, size: 18),
+          ]),
+          const SizedBox(height: 3),
+          Text(item.read ? 'Read' : 'Unread',
+              style: TextStyle(
+                  color: item.read ? AppTheme.muted : AppTheme.peach,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700)),
+          const SizedBox(height: 10),
+          Expanded(
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(
+                  child: Text(item.body,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          color: AppTheme.muted, fontSize: 11, height: 1.4))),
+              const SizedBox(width: 8),
+              Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                      color: _typeColor(item.type).withValues(alpha: .12),
+                      borderRadius: BorderRadius.circular(12)),
+                  child: Icon(_typeIcon(item.type),
+                      color: _typeColor(item.type), size: 17)),
+            ]),
+          ),
+          Text(_date.format(item.createdAt.toLocal()),
+              style: const TextStyle(color: AppTheme.muted, fontSize: 10)),
+        ]),
+      );
+}
+
+class _NotificationGroupSkeleton extends StatelessWidget {
+  const _NotificationGroupSkeleton();
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 22),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const _Skeleton(width: 140, height: 15),
+          const SizedBox(height: 12),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 14,
+            mainAxisSpacing: 14,
+            childAspectRatio: 1.5,
+            children: [
+              for (var i = 0; i < 4; i++)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppTheme.line)),
+                  child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _Skeleton(width: 100, height: 13),
+                        SizedBox(height: 10),
+                        _Skeleton(height: 11),
+                        SizedBox(height: 6),
+                        _Skeleton(width: 140, height: 11)
+                      ]),
+                ),
+            ],
+          ),
+        ]),
+      );
+}
+
+String _typeGroupLabel(String type) => switch (type) {
+      'payment' => 'Payment activity',
+      'student' => 'Student updates',
+      _ => 'Automated sync',
+    };
 
 class MessagesPage extends StatelessWidget {
   const MessagesPage({super.key});
@@ -1265,22 +2104,22 @@ class MessagesPage extends StatelessWidget {
 class _CampaignSkeleton extends StatelessWidget {
   const _CampaignSkeleton();
   @override
-  Widget build(BuildContext context) => Card(
-      margin: const EdgeInsets.only(bottom: 12),
+  Widget build(BuildContext context) => const Card(
+      margin: EdgeInsets.only(bottom: 12),
       child: Padding(
-          padding: const EdgeInsets.all(18),
+          padding: EdgeInsets.all(18),
           child: Row(children: [
-            const _Skeleton(width: 43, height: 43, radius: 14),
-            const SizedBox(width: 13),
+            _Skeleton(width: 43, height: 43, radius: 14),
+            SizedBox(width: 13),
             Expanded(
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                   _Skeleton(width: 140, height: 14),
                   SizedBox(height: 7),
                   _Skeleton(width: 180, height: 11)
                 ])),
-            const _Skeleton(width: 50, height: 18, radius: 30),
+            _Skeleton(width: 50, height: 18, radius: 30),
           ])));
 }
 
@@ -1366,9 +2205,6 @@ class _StatusPill extends StatelessWidget {
               fontWeight: FontWeight.w800)));
 }
 
-/// Slim, non-blocking strip shown above the current page when the API is
-/// unreachable. The page underneath keeps rendering (with skeletons where
-/// real data would go) instead of being replaced by a full error screen.
 class _OfflineBanner extends StatelessWidget {
   const _OfflineBanner({required this.onRetry});
   final Future<void> Function() onRetry;
@@ -1386,7 +2222,7 @@ class _OfflineBanner extends StatelessWidget {
           const SizedBox(width: 10),
           const Expanded(
               child: Text(
-                  "Can't reach the school API — showing a preview. Retrying automatically…",
+                  "Can't reach the school API  ? showing a preview. Retrying automatically ?",
                   style: TextStyle(
                       color: AppTheme.ink,
                       fontSize: 12,
@@ -1396,8 +2232,6 @@ class _OfflineBanner extends StatelessWidget {
       );
 }
 
-/// Animated shimmering placeholder block used to sketch the shape of
-/// content that hasn't loaded yet.
 class _Skeleton extends StatefulWidget {
   const _Skeleton({this.width, this.height = 14, this.radius = 8});
   final double? width;
@@ -1444,7 +2278,6 @@ class _SkeletonState extends State<_Skeleton>
       );
 }
 
-/// A full-width skeleton row, used for table-style lists.
 class _SkeletonRow extends StatelessWidget {
   const _SkeletonRow({this.cells = 5});
   final int cells;

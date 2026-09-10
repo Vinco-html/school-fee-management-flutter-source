@@ -7,6 +7,7 @@ class AppTheme {
   static const green = Color(0xFF2D866F);
   static const blue = Color(0xFF5275D9);
   static const canvas = Color(0xFFF5F7F6);
+  static const card = Color(0xFFB00020);
   static const line = Color(0xFFE6EBE9);
 
   static ThemeData light() => ThemeData(

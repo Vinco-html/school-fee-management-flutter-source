@@ -37,7 +37,7 @@ class _SchoolFeeAppState extends State<SchoolFeeApp> {
         animation: store,
         builder: (context, _) => MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'School Fee Management',
+          title: 'Petunia Pay',
           theme: AppTheme.light(),
           home: AppShell(store: store),
         ),
