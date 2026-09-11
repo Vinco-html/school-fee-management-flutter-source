@@ -96,7 +96,8 @@ class Payment {
         method: json['method']?.toString() ?? '',
         status: json['status']?.toString() ?? '',
         channel: json['channel']?.toString() ?? '',
-        paidAt: DateTime.tryParse(json['paidAt']?.toString() ?? '') ?? DateTime.now(),
+        paidAt: DateTime.tryParse(json['paidAt']?.toString() ?? '') ??
+            DateTime.now(),
       );
 }
 
@@ -123,7 +124,8 @@ class Activity {
         role: json['role']?.toString() ?? '',
         action: json['action']?.toString() ?? '',
         detail: json['detail']?.toString() ?? '',
-        createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
+        createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
+            DateTime.now(),
       );
 }
 
@@ -144,13 +146,15 @@ class SchoolNotification {
   final bool read;
   final DateTime createdAt;
 
-  factory SchoolNotification.fromJson(Map<String, dynamic> json) => SchoolNotification(
+  factory SchoolNotification.fromJson(Map<String, dynamic> json) =>
+      SchoolNotification(
         id: _toInt(json['id']),
         title: json['title']?.toString() ?? '',
         body: json['body']?.toString() ?? '',
         type: json['type']?.toString() ?? 'activity',
         read: json['read'] == true,
-        createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
+        createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
+            DateTime.now(),
       );
 }
 
@@ -203,7 +207,8 @@ class DashboardSummary {
   final String term;
   final List<Activity> recentActivity;
 
-  factory DashboardSummary.fromJson(Map<String, dynamic> json) => DashboardSummary(
+  factory DashboardSummary.fromJson(Map<String, dynamic> json) =>
+      DashboardSummary(
         students: _toInt(json['students']),
         outstanding: _toInt(json['outstanding']),
         collected: _toInt(json['collected']),
@@ -216,4 +221,5 @@ class DashboardSummary {
       );
 }
 
-int _toInt(dynamic value) => value is num ? value.round() : int.tryParse('$value') ?? 0;
+int _toInt(dynamic value) =>
+    value is num ? value.round() : int.tryParse('$value') ?? 0;

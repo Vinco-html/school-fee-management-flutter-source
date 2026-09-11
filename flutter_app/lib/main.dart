@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'api_client.dart';
 import 'screens.dart';
@@ -6,7 +7,13 @@ import 'store.dart';
 import 'theme.dart';
 
 void main() {
-  runApp(SchoolFeeApp(api: ApiClient()));
+  WidgetsFlutterBinding.ensureInitialized(); // add this line first
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]).then((_) {
+    runApp(SchoolFeeApp(api: ApiClient()));
+  });
 }
 
 class SchoolFeeApp extends StatefulWidget {
@@ -37,7 +44,7 @@ class _SchoolFeeAppState extends State<SchoolFeeApp> {
         animation: store,
         builder: (context, _) => MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'Petunia Pay',
+          title: 'Petunia',
           theme: AppTheme.light(),
           home: AppShell(store: store),
         ),

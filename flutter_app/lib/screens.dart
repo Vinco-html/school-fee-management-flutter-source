@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:school_fee_management/student_details.dart';
 
 import 'models.dart';
 import 'store.dart';
@@ -183,11 +184,14 @@ class _BottomNavItem extends StatelessWidget {
               ),
               if (selected) ...[
                 const SizedBox(width: 6),
-                Text(label,
-                    style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.peach)),
+                Flexible(
+                  child: Text(label,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.peach)),
+                ),
               ],
             ],
           ),
@@ -195,7 +199,7 @@ class _BottomNavItem extends StatelessWidget {
       );
 }
 
-/// Sidebar  ? logo, "Menu" section label, nav rows (selected item shows a
+/// Sidebar  logo, "Menu" section label, nav rows (selected item shows a
 /// trailing arrow like the Academix reference), invite card, profile row.
 class _Sidebar extends StatelessWidget {
   const _Sidebar(
@@ -223,11 +227,14 @@ class _Sidebar extends StatelessWidget {
               child: Row(children: [
                 Icon(Icons.auto_awesome, color: AppTheme.peach, size: 20),
                 SizedBox(width: 8),
-                Text('Petunia',
-                    style: TextStyle(
-                        color: AppTheme.ink,
-                        fontSize: 21,
-                        fontWeight: FontWeight.w700)),
+                Flexible(
+                  child: Text('Petunia',
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: AppTheme.ink,
+                          fontSize: 21,
+                          fontWeight: FontWeight.w700)),
+                ),
                 Text(' school',
                     style: TextStyle(color: AppTheme.muted, fontSize: 21)),
               ]),
@@ -262,6 +269,7 @@ class _Sidebar extends StatelessWidget {
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text('Connect Equity Bank',
                       style: TextStyle(
@@ -293,10 +301,10 @@ class _Sidebar extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 18),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(children: [
-                CircleAvatar(
+                const CircleAvatar(
                     radius: 16,
                     backgroundColor: AppTheme.peach,
                     child: Text('JM',
@@ -304,12 +312,13 @@ class _Sidebar extends StatelessWidget {
                             color: AppTheme.ink,
                             fontSize: 11,
                             fontWeight: FontWeight.w800))),
-                SizedBox(width: 9),
-                Expanded(
+                const SizedBox(width: 9),
+                const Expanded(
                     child: Text('Jane Mwangi\nSchool admin',
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                             color: AppTheme.ink, fontSize: 12, height: 1.35))),
-                Icon(Icons.chevron_right_rounded, color: AppTheme.muted),
+                const Icon(Icons.chevron_right_rounded, color: AppTheme.muted),
               ]),
             ),
           ],
@@ -344,39 +353,48 @@ class _NavItem extends StatelessWidget {
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(13),
             ),
-            child: Column(children: [
-              Icon(icon,
-                  color: selected ? AppTheme.peach : AppTheme.muted, size: 19),
-              const SizedBox(width: 12),
-              Expanded(
-                  child: Text(label,
-                      style: TextStyle(
-                          color: selected ? AppTheme.peach : AppTheme.ink,
-                          fontSize: 13,
-                          fontWeight:
-                              selected ? FontWeight.w700 : FontWeight.w500))),
-              if (count > 0)
-                Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                    decoration: BoxDecoration(
-                        color: AppTheme.peach,
-                        borderRadius: BorderRadius.circular(8)),
-                    child: Text('$count',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800)))
-              else if (selected)
-                const Icon(Icons.arrow_forward_rounded,
-                    color: AppTheme.peach, size: 16),
-            ]),
+            // NOTE: this row lays out an icon, a label, and a trailing
+            // badge/arrow horizontally. It was previously a Column, which
+            // gave the Expanded(child: Text(...)) an unbounded height to
+            // fill and crashed layout with a RenderFlex "non-zero flex but
+            // incoming height constraints are unbounded" error.
+            child: Row(
+              children: [
+                Icon(icon,
+                    color: selected ? AppTheme.peach : AppTheme.muted,
+                    size: 19),
+                const SizedBox(width: 12),
+                Expanded(
+                    child: Text(label,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            color: selected ? AppTheme.peach : AppTheme.ink,
+                            fontSize: 13,
+                            fontWeight:
+                                selected ? FontWeight.w700 : FontWeight.w500))),
+                if (count > 0)
+                  Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                          color: AppTheme.peach,
+                          borderRadius: BorderRadius.circular(8)),
+                      child: Text('$count',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800)))
+                else if (selected)
+                  const Icon(Icons.arrow_forward_rounded,
+                      color: AppTheme.peach, size: 16),
+              ],
+            ),
           ),
         ),
       );
 }
 
-/// Top bar  ? title + date-ish subtitle, search with a mic affordance,
+/// Top bar  title + date-ish subtitle, search with a mic affordance,
 /// theme/notification icons, role picker (stands in for the profile chip).
 class _TopBar extends StatelessWidget {
   const _TopBar(
@@ -395,14 +413,17 @@ class _TopBar extends StatelessWidget {
           final compact = constraints.maxWidth < 700;
           final heading = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(title,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                       color: AppTheme.ink,
                       fontSize: 25,
                       fontWeight: FontWeight.w800)),
               const SizedBox(height: 4),
-              Text(store.summary?.term ?? 'Loading your school workspace ?',
+              Text(store.summary?.term ?? 'Loading your school workspace',
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: AppTheme.muted, fontSize: 12)),
             ],
           );
@@ -501,15 +522,19 @@ class _RolePicker extends StatelessWidget {
                     color: store.isAccountant ? AppTheme.blue : AppTheme.peach,
                     size: 17)),
             const SizedBox(width: 8),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(store.isAccountant ? 'Accountant' : 'Jane Mwangi',
-                  style: const TextStyle(
-                      color: AppTheme.ink,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700)),
-              const Text('Sr. School admin',
-                  style: TextStyle(color: AppTheme.muted, fontSize: 10)),
-            ]),
+            Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(store.isAccountant ? 'Accountant' : 'Jane Mwangi',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          color: AppTheme.ink,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700)),
+                  const Text('Sr. School admin',
+                      style: TextStyle(color: AppTheme.muted, fontSize: 10)),
+                ]),
             const SizedBox(width: 4),
             const Icon(Icons.keyboard_arrow_down,
                 size: 17, color: AppTheme.muted),
@@ -532,14 +557,14 @@ class _SideMenu extends StatelessWidget {
       elevation: 0,
       child: Stack(
         children: [
-          // Full-screen translucent scrim  ? tap anywhere here to close.
+          // Full-screen translucent scrim  tap anywhere here to close.
           Positioned.fill(
             child: GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Container(color: Colors.black.withValues(alpha: .35)),
             ),
           ),
-          // The actual menu panel  ? only this has a background.
+          // The actual menu panel  only this has a background.
           Align(
             alignment: Alignment.topRight,
             child: SafeArea(
@@ -632,7 +657,7 @@ class _SideMenu extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Dashboard  ? Academix reference: 3 stat pills + course-statistics card,
+// Dashboard  Academix reference: 3 stat pills + course-statistics card,
 // a trend chart card, an activity table, and a right rail with a schedule
 // list plus a gradient "upcoming" card.
 // ---------------------------------------------------------------------------
@@ -648,32 +673,54 @@ class DashboardPage extends StatelessWidget {
       children: [
         LayoutBuilder(builder: (context, constraints) {
           final split = constraints.maxWidth > 980;
+
+          final statCircles = Wrap(spacing: 10, runSpacing: 10, children: [
+            _StatCircle(
+                label: 'Balance',
+                value: '${summary.students}',
+                icon: Icons.people_alt_outlined,
+                tint: AppTheme.peach),
+            _StatCircle(
+                label: 'Collected',
+                value: '${summary.paymentCount}',
+                icon: Icons.receipt_long_outlined,
+                tint: AppTheme.green),
+            _StatCircle(
+                label: 'Expected',
+                value: '${summary.unreadNotifications}',
+                icon: Icons.notifications_none_rounded,
+                tint: AppTheme.ink),
+          ]);
+          final courseStats = _CourseStatisticsCard(summary: summary);
+
+          // Stat circles sit above the fee-statistics card on small
+          // screens, and side by side with it on larger screens.
+          final topRow = !store.isAccountant
+              ? courseStats
+              : LayoutBuilder(builder: (context, inner) {
+                  final narrow = inner.maxWidth < 640;
+                  if (narrow) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        statCircles,
+                        const SizedBox(height: 14),
+                        courseStats,
+                      ],
+                    );
+                  }
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 4, child: statCircles),
+                      const SizedBox(width: 14),
+                      Expanded(flex: 4, child: courseStats),
+                    ],
+                  );
+                });
+
           final left = Column(children: [
-            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              if (store.isAccountant)
-                Expanded(
-                  flex: 4,
-                  child: Wrap(spacing: 10, runSpacing: 10, children: [
-                    _StatCircle(
-                        label: 'Balance',
-                        value: '${summary.students}',
-                        icon: Icons.people_alt_outlined,
-                        tint: AppTheme.peach),
-                    _StatCircle(
-                        label: 'Collected',
-                        value: '${summary.paymentCount}',
-                        icon: Icons.receipt_long_outlined,
-                        tint: AppTheme.green),
-                    _StatCircle(
-                        label: 'Expected',
-                        value: '${summary.unreadNotifications}',
-                        icon: Icons.notifications_none_rounded,
-                        tint: AppTheme.ink),
-                  ]),
-                ),
-              const SizedBox(width: 14),
-              Expanded(flex: 4, child: _CourseStatisticsCard(summary: summary)),
-            ]),
+            topRow,
             const SizedBox(height: 18),
             _TrendCard(summary: summary),
             const SizedBox(height: 18),
@@ -704,17 +751,33 @@ class _DashboardSkeleton extends StatelessWidget {
   final SchoolStore store;
   @override
   Widget build(BuildContext context) => _PageScroll(children: [
-        Row(children: [
-          Expanded(
-              flex: 3,
-              child: Wrap(spacing: 12, runSpacing: 12, children: const [
-                _StatCircleSkeleton(),
-                _StatCircleSkeleton(),
-                _StatCircleSkeleton()
-              ])),
-          const SizedBox(width: 14),
-          const Expanded(flex: 4, child: _CourseStatisticsSkeleton()),
-        ]),
+        LayoutBuilder(builder: (context, constraints) {
+          final narrow = constraints.maxWidth < 640;
+          final stats = Wrap(spacing: 12, runSpacing: 12, children: const [
+            _StatCircleSkeleton(),
+            _StatCircleSkeleton(),
+            _StatCircleSkeleton()
+          ]);
+          const stats2 = _CourseStatisticsSkeleton();
+          return narrow
+              ? const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(spacing: 12, runSpacing: 12, children: [
+                      _StatCircleSkeleton(),
+                      _StatCircleSkeleton(),
+                      _StatCircleSkeleton()
+                    ]),
+                    SizedBox(height: 14),
+                    stats2,
+                  ],
+                )
+              : Row(children: [
+                  Expanded(flex: 3, child: stats),
+                  const SizedBox(width: 14),
+                  const Expanded(flex: 4, child: stats2),
+                ]);
+        }),
         const SizedBox(height: 18),
         const _TrendCardSkeleton(),
         const SizedBox(height: 18),
@@ -722,7 +785,7 @@ class _DashboardSkeleton extends StatelessWidget {
       ]);
 }
 
-/// Small round stat tile  ? mirrors the "Presentation / Examination / Reports"
+/// Small round stat tile  mirrors the "Presentation / Examination / Reports"
 /// circular badges in the Academix dashboard.
 class _StatCircle extends StatelessWidget {
   const _StatCircle(
@@ -742,21 +805,27 @@ class _StatCircle extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppTheme.line)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(color: tint, shape: BoxShape.circle),
-              child: Icon(icon, color: Colors.white, size: 19)),
-          const SizedBox(height: 12),
-          Text(label,
-              style: const TextStyle(color: AppTheme.muted, fontSize: 11)),
-          Text(value,
-              style: const TextStyle(
-                  color: AppTheme.ink,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w900)),
-        ]),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                  width: 30,
+                  height: 30,
+                  decoration:
+                      BoxDecoration(color: tint, shape: BoxShape.circle),
+                  child: Icon(icon, color: Colors.white, size: 19)),
+              const SizedBox(height: 12),
+              Text(label,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: AppTheme.muted, fontSize: 11)),
+              Text(value,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      color: AppTheme.ink,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900)),
+            ]),
       );
 }
 
@@ -771,6 +840,7 @@ class _StatCircleSkeleton extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppTheme.line)),
         child: const Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _Skeleton(width: 30, height: 30, radius: 15),
@@ -782,7 +852,7 @@ class _StatCircleSkeleton extends StatelessWidget {
       );
 }
 
-/// "Course Statistics" style card  ? Done / On Progress / To Do bars, remapped
+/// "Course Statistics" style card  Done / On Progress / To Do bars, remapped
 /// to Collected / Pending follow-up / Overdue.
 class _CourseStatisticsCard extends StatelessWidget {
   const _CourseStatisticsCard({required this.summary});
@@ -799,24 +869,29 @@ class _CourseStatisticsCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: AppTheme.line)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          const Expanded(
-              child: Text('Fee statistics',
-                  style: TextStyle(
-                      color: AppTheme.ink,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800))),
-          const Icon(Icons.more_horiz, color: AppTheme.muted, size: 18)
-        ]),
-        const SizedBox(height: 14),
-        _StatBarRow(
-            label: 'Collected', pct: collectedPct, color: AppTheme.peach),
-        const SizedBox(height: 10),
-        _StatBarRow(label: 'Pending', pct: pendingPct, color: AppTheme.green),
-        const SizedBox(height: 10),
-        _StatBarRow(label: 'Overdue', pct: overduePct, color: AppTheme.ink),
-      ]),
+      child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              const Expanded(
+                  child: Text('Fee statistics',
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: AppTheme.ink,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800))),
+              const Icon(Icons.more_horiz, color: AppTheme.muted, size: 18)
+            ]),
+            const SizedBox(height: 14),
+            _StatBarRow(
+                label: 'Collected', pct: collectedPct, color: AppTheme.peach),
+            const SizedBox(height: 10),
+            _StatBarRow(
+                label: 'Pending', pct: pendingPct, color: AppTheme.green),
+            const SizedBox(height: 10),
+            _StatBarRow(label: 'Overdue', pct: overduePct, color: AppTheme.ink),
+          ]),
     );
   }
 }
@@ -831,6 +906,7 @@ class _CourseStatisticsSkeleton extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppTheme.line)),
         child: const Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _Skeleton(width: 110, height: 13),
@@ -855,6 +931,7 @@ class _StatBarRow extends StatelessWidget {
         SizedBox(
             width: 64,
             child: Text(label,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(color: AppTheme.muted, fontSize: 11))),
         Expanded(
             child: ClipRRect(
@@ -869,6 +946,7 @@ class _StatBarRow extends StatelessWidget {
             width: 34,
             child: Text('${(pct * 100).round()}%',
                 textAlign: TextAlign.right,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                     color: AppTheme.ink,
                     fontSize: 11,
@@ -879,7 +957,7 @@ class _StatBarRow extends StatelessWidget {
 /// "Total Attendance Report" style area chart, remapped to a fee-collection
 /// trend. There's no per-day time series in the data model, so this
 /// synthesizes a smooth week-long curve from the collected/outstanding split
-/// purely for visual texture  ? swap in real daily figures if you add them.
+/// purely for visual texture  swap in real daily figures if you add them.
 class _TrendCard extends StatelessWidget {
   const _TrendCard({required this.summary});
   final DashboardSummary summary;
@@ -905,35 +983,46 @@ class _TrendCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: AppTheme.line)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Padding(
-            padding: EdgeInsets.all(20),
-            child: Row(children: [
-              Expanded(
-                  child: Text('Fee collection trend',
-                      style: TextStyle(
-                          color: AppTheme.ink,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800))),
-              _LegendDot(color: AppTheme.peach, label: 'Collected'),
-              SizedBox(width: 14),
-              _LegendDot(color: AppTheme.green, label: 'Outstanding'),
-            ])),
-        const SizedBox(height: 18),
-        SizedBox(
-          height: 200,
-          width: double.infinity,
-          child: CustomPaint(
-              painter: _AreaChartPainter(
-                  seriesA: collectedSeries, seriesB: outstandingSeries)),
-        ),
-        const SizedBox(height: 10),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          for (final d in days)
-            Text(_dayLabel.format(d),
-                style: const TextStyle(color: AppTheme.muted, fontSize: 10))
-        ]),
-      ]),
+      child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+                padding: EdgeInsets.all(20),
+                child: Row(children: [
+                  Expanded(
+                      child: Text('Fee collection trend',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: AppTheme.ink,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800))),
+                  _LegendDot(color: AppTheme.peach, label: 'Collected'),
+                  SizedBox(width: 14),
+                  _LegendDot(color: AppTheme.green, label: 'Outstanding'),
+                ])),
+            const SizedBox(height: 18),
+            SizedBox(
+              height: 200,
+              width: double.infinity,
+              child: CustomPaint(
+                  painter: _AreaChartPainter(
+                      seriesA: collectedSeries, seriesB: outstandingSeries)),
+            ),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    for (final d in days)
+                      Text(_dayLabel.format(d),
+                          style: const TextStyle(
+                              color: AppTheme.muted, fontSize: 10))
+                  ]),
+            ),
+            const SizedBox(height: 16),
+          ]),
     );
   }
 }
@@ -947,7 +1036,7 @@ class _TrendCardSkeleton extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppTheme.line)),
-        child: const Column(children: [
+        child: const Column(mainAxisSize: MainAxisSize.min, children: [
           Row(children: [
             _Skeleton(width: 160, height: 15),
             Spacer(),
@@ -1031,10 +1120,51 @@ class _AreaChartPainter extends CustomPainter {
 }
 
 /// "Visualize your academic success" style table, remapped to recent
-/// activity rows with a profile avatar and an action label.
+/// activity rows with a profile avatar and an action label. Scrolls
+/// horizontally on narrow screens instead of squeezing/overflowing.
 class _ActivityTableCard extends StatelessWidget {
   const _ActivityTableCard({required this.items});
   final List<Activity> items;
+
+  static const double _minWidth = 640;
+
+  Widget _row(Activity item) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(children: [
+          Expanded(
+              flex: 2,
+              child: Row(children: [
+                CircleAvatar(
+                    radius: 15,
+                    backgroundColor:
+                        _roleColor(item.role).withValues(alpha: .13),
+                    child: Icon(_roleIcon(item.role),
+                        color: _roleColor(item.role), size: 15)),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: Text(item.actor,
+                        style: const TextStyle(
+                            color: AppTheme.ink,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700),
+                        overflow: TextOverflow.ellipsis)),
+              ])),
+          Expanded(
+              child: Text(item.action,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: AppTheme.muted, fontSize: 12))),
+          Expanded(
+              child: Text(item.detail,
+                  style: const TextStyle(color: AppTheme.muted, fontSize: 12),
+                  overflow: TextOverflow.ellipsis)),
+          Expanded(
+              child: Text(_date.format(item.createdAt.toLocal()),
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: AppTheme.muted, fontSize: 11))),
+          TextButton(onPressed: () {}, child: const Text('View')),
+        ]),
+      );
+
   @override
   Widget build(BuildContext context) => Container(
         decoration: BoxDecoration(
@@ -1042,53 +1172,29 @@ class _ActivityTableCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppTheme.line)),
         padding: const EdgeInsets.all(18),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Recent activity',
-              style: TextStyle(
-                  color: AppTheme.ink,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800)),
-          const SizedBox(height: 14),
-          const _TableHeader(cells: ['Actor', 'Action', 'Detail', 'When', '']),
-          for (final item in items.take(6))
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Row(children: [
-                Expanded(
-                    flex: 2,
-                    child: Row(children: [
-                      CircleAvatar(
-                          radius: 15,
-                          backgroundColor:
-                              _roleColor(item.role).withValues(alpha: .13),
-                          child: Icon(_roleIcon(item.role),
-                              color: _roleColor(item.role), size: 15)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                          child: Text(item.actor,
-                              style: const TextStyle(
-                                  color: AppTheme.ink,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700),
-                              overflow: TextOverflow.ellipsis)),
-                    ])),
-                Expanded(
-                    child: Text(item.action,
-                        style: const TextStyle(
-                            color: AppTheme.muted, fontSize: 12))),
-                Expanded(
-                    child: Text(item.detail,
-                        style: const TextStyle(
-                            color: AppTheme.muted, fontSize: 12),
-                        overflow: TextOverflow.ellipsis)),
-                Expanded(
-                    child: Text(_date.format(item.createdAt.toLocal()),
-                        style: const TextStyle(
-                            color: AppTheme.muted, fontSize: 11))),
-                TextButton(onPressed: () {}, child: const Text('View')),
-              ]),
-            ),
-        ]),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Recent activity',
+                  style: TextStyle(
+                      color: AppTheme.ink,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800)),
+              const SizedBox(height: 14),
+              LayoutBuilder(builder: (context, constraints) {
+                final table = Column(children: [
+                  const _TableHeader(
+                      cells: ['Actor', 'Action', 'Detail', 'When', '']),
+                  for (final item in items.take(6)) _row(item),
+                ]);
+                if (constraints.maxWidth >= _minWidth) return table;
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(width: _minWidth, child: table),
+                );
+              }),
+            ]),
       );
 }
 
@@ -1101,18 +1207,21 @@ class _ActivityTableSkeleton extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppTheme.line)),
         padding: const EdgeInsets.all(18),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const _Skeleton(width: 130, height: 14),
-          const SizedBox(height: 16),
-          for (var i = 0; i < 4; i++)
-            const Padding(
-                padding: EdgeInsets.only(bottom: 12),
-                child: _Skeleton(height: 12)),
-        ]),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _Skeleton(width: 130, height: 14),
+              const SizedBox(height: 16),
+              for (var i = 0; i < 4; i++)
+                const Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: _Skeleton(height: 12)),
+            ]),
       );
 }
 
-/// "Course Schedule" style right-rail list  ? remapped to a quick follow-up
+/// "Course Schedule" style right-rail list  remapped to a quick follow-up
 /// queue built from recent activity.
 class _ScheduleCard extends StatelessWidget {
   const _ScheduleCard({required this.items});
@@ -1127,82 +1236,93 @@ class _ScheduleCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: AppTheme.line)),
       padding: const EdgeInsets.all(18),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Follow-up schedule',
-            style: TextStyle(
-                color: AppTheme.ink,
-                fontSize: 15,
-                fontWeight: FontWeight.w800)),
-        const SizedBox(height: 3),
-        const Text("Here's your activity for the week",
-            style: TextStyle(color: AppTheme.muted, fontSize: 11)),
-        const SizedBox(height: 14),
-        SizedBox(
-          height: 68,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: days.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (_, i) {
-              final selected = i == 1;
-              return Container(
-                width: 54,
-                decoration: BoxDecoration(
-                    color: selected ? AppTheme.peach : const Color(0xFFF5F6F6),
-                    borderRadius: BorderRadius.circular(14)),
-                alignment: Alignment.center,
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('${days[i].day}',
-                          style: TextStyle(
-                              color: selected ? Colors.white : AppTheme.ink,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 15)),
-                      Text(DateFormat('MMM').format(days[i]),
-                          style: TextStyle(
-                              color: selected ? Colors.white70 : AppTheme.muted,
-                              fontSize: 10)),
-                    ]),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 16),
-        for (final item in items.take(3))
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(children: [
-              CircleAvatar(
-                  radius: 17,
-                  backgroundColor: _roleColor(item.role).withValues(alpha: .13),
-                  child: Icon(_roleIcon(item.role),
-                      color: _roleColor(item.role), size: 16)),
-              const SizedBox(width: 10),
-              Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    Text(item.actor,
-                        style: const TextStyle(
-                            color: AppTheme.ink,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700)),
-                    Text(item.action,
-                        style: const TextStyle(
-                            color: AppTheme.muted, fontSize: 11)),
-                  ])),
-              _RoundIcon(icon: Icons.schedule_outlined, onTap: () {}),
-              const SizedBox(width: 6),
-              _RoundIcon(icon: Icons.videocam_outlined, onTap: () {}),
-            ]),
-          ),
-      ]),
+      child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Follow-up schedule',
+                style: TextStyle(
+                    color: AppTheme.ink,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800)),
+            const SizedBox(height: 3),
+            const Text("Here's your activity for the week",
+                style: TextStyle(color: AppTheme.muted, fontSize: 11)),
+            const SizedBox(height: 14),
+            SizedBox(
+              height: 68,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: days.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (_, i) {
+                  final selected = i == 1;
+                  return Container(
+                    width: 54,
+                    decoration: BoxDecoration(
+                        color:
+                            selected ? AppTheme.peach : const Color(0xFFF5F6F6),
+                        borderRadius: BorderRadius.circular(14)),
+                    alignment: Alignment.center,
+                    child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('${days[i].day}',
+                              style: TextStyle(
+                                  color: selected ? Colors.white : AppTheme.ink,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15)),
+                          Text(DateFormat('MMM').format(days[i]),
+                              style: TextStyle(
+                                  color: selected
+                                      ? Colors.white70
+                                      : AppTheme.muted,
+                                  fontSize: 10)),
+                        ]),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            for (final item in items.take(3))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(children: [
+                  CircleAvatar(
+                      radius: 17,
+                      backgroundColor:
+                          _roleColor(item.role).withValues(alpha: .13),
+                      child: Icon(_roleIcon(item.role),
+                          color: _roleColor(item.role), size: 16)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                        Text(item.actor,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                color: AppTheme.ink,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700)),
+                        Text(item.action,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                color: AppTheme.muted, fontSize: 11)),
+                      ])),
+                  _RoundIcon(icon: Icons.schedule_outlined, onTap: () {}),
+                  const SizedBox(width: 6),
+                  _RoundIcon(icon: Icons.videocam_outlined, onTap: () {}),
+                ]),
+              ),
+          ]),
     );
   }
 }
 
-/// Gradient "Upcoming Course" style card  ? remapped to the Equity Bank
+/// Gradient "Upcoming Course" style card  remapped to the Equity Bank
 /// sync prompt with pill-shaped meta chips.
 class _UpcomingCard extends StatelessWidget {
   const _UpcomingCard({required this.store});
@@ -1217,40 +1337,47 @@ class _UpcomingCard extends StatelessWidget {
               end: Alignment.bottomRight),
           borderRadius: BorderRadius.circular(18),
         ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            const Expanded(
-                child: Text('Upcoming',
-                    style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700))),
-            TextButton(
-                onPressed: () => store.syncEquity(),
-                style: TextButton.styleFrom(foregroundColor: Colors.white),
-                child: const Text('Learn more'))
-          ]),
-          const SizedBox(height: 4),
-          const Text('Equity Bank sync',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800)),
-          const SizedBox(height: 8),
-          const Text(
-              'Automatically sync new bank deposits into receipts and balances.',
-              style: TextStyle(color: Colors.white, fontSize: 12, height: 1.4)),
-          const SizedBox(height: 16),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            _GlassPill(icon: Icons.access_time_rounded, label: 'Runs hourly'),
-            _GlassPill(
-                icon: Icons.calendar_today_outlined,
-                label: DateFormat('d MMM').format(DateTime.now())),
-            _GlassPill(
-                icon: Icons.link_rounded,
-                label: store.loading ? 'Syncing ?' : 'Ready'),
-          ]),
-        ]),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                const Expanded(
+                    child: Text('Upcoming',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700))),
+                TextButton(
+                    onPressed: () => store.syncEquity(),
+                    style: TextButton.styleFrom(foregroundColor: Colors.white),
+                    child: const Text('Learn more'))
+              ]),
+              const SizedBox(height: 4),
+              const Text('Equity Bank sync',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800)),
+              const SizedBox(height: 8),
+              const Text(
+                  'Automatically sync new bank deposits into receipts and balances.',
+                  style: TextStyle(
+                      color: Colors.white, fontSize: 12, height: 1.4)),
+              const SizedBox(height: 16),
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                const _GlassPill(
+                    icon: Icons.access_time_rounded, label: 'Runs hourly'),
+                _GlassPill(
+                    icon: Icons.calendar_today_outlined,
+                    label: DateFormat('d MMM').format(DateTime.now())),
+                _GlassPill(
+                    icon: Icons.link_rounded,
+                    label: store.loading ? 'Syncing' : 'Ready'),
+              ]),
+            ]),
       );
 }
 
@@ -1285,36 +1412,40 @@ class _MessageCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppTheme.line)),
         padding: const EdgeInsets.all(20),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            const Expanded(
-                child: Text('Parent communication',
-                    style: TextStyle(
-                        color: AppTheme.ink,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800))),
-            TextButton(onPressed: () {}, child: const Text('View all'))
-          ]),
-          const SizedBox(height: 8),
-          const Text(
-              'Receipts, balance reminders and event updates reach families through WhatsApp, bulk email and SMS.',
-              style:
-                  TextStyle(color: AppTheme.muted, fontSize: 12, height: 1.45)),
-          const SizedBox(height: 16),
-          const Wrap(spacing: 7, runSpacing: 7, children: [
-            _Pill(label: 'WhatsApp', color: Color(0xFF2D866F)),
-            _Pill(label: 'Bulk email', color: Color(0xFF5275D9)),
-            _Pill(label: 'SMS', color: Color(0xFFFF9162))
-          ]),
-          const SizedBox(height: 14),
-          if (store.isAccountant)
-            SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                    onPressed: () => _showCampaignDialog(context, store),
-                    icon: const Icon(Icons.add, size: 16),
-                    label: const Text('Prepare a campaign'))),
-        ]),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                const Expanded(
+                    child: Text('Parent communication',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            color: AppTheme.ink,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800))),
+                TextButton(onPressed: () {}, child: const Text('View all'))
+              ]),
+              const SizedBox(height: 8),
+              const Text(
+                  'Receipts, balance reminders and event updates reach families through WhatsApp, bulk email and SMS.',
+                  style: TextStyle(
+                      color: AppTheme.muted, fontSize: 12, height: 1.45)),
+              const SizedBox(height: 16),
+              const Wrap(spacing: 7, runSpacing: 7, children: [
+                _Pill(label: 'WhatsApp', color: Color(0xFF2D866F)),
+                _Pill(label: 'Bulk email', color: Color(0xFF5275D9)),
+                _Pill(label: 'SMS', color: Color(0xFFFF9162))
+              ]),
+              const SizedBox(height: 14),
+              if (store.isAccountant)
+                SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                        onPressed: () => _showCampaignDialog(context, store),
+                        icon: const Icon(Icons.add, size: 16),
+                        label: const Text('Prepare a campaign'))),
+            ]),
       );
 }
 
@@ -1334,7 +1465,7 @@ class _Pill extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Students & Classes  ? GlowBoard "Our Crew" style: filter row, an "Add" pill
+// Students & Classes  GlowBoard "Our Crew" style: filter row, an "Add" pill
 // button, and a card grid (avatar, name/handle, role tag, two-stat row).
 // ---------------------------------------------------------------------------
 
@@ -1375,28 +1506,41 @@ class _StudentsPageState extends State<StudentsPage> {
 
     return Stack(children: [
       _PageScroll(children: [
-        Row(children: [
-          Expanded(
-              child: _FilterDropdown(
-                  value: gradeFilter,
-                  options: grades,
-                  onChanged: (v) => setState(() => gradeFilter = v))),
-          const SizedBox(width: 10),
-          Expanded(
-              child: _FilterDropdown(
-                  value: statusFilter,
-                  options: statuses,
-                  onChanged: (v) => setState(() => statusFilter = v))),
-          const SizedBox(width: 10),
-          Expanded(
-              flex: 2,
-              child: TextField(
-                  onChanged: (value) => setState(() => query = value),
-                  decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.search),
-                      hintText: 'Search here ?',
-                      isDense: true))),
-        ]),
+        LayoutBuilder(builder: (context, constraints) {
+          final narrow = constraints.maxWidth < 560;
+          final gradeField = _FilterDropdown(
+              value: gradeFilter,
+              options: grades,
+              onChanged: (v) => setState(() => gradeFilter = v));
+          final statusField = _FilterDropdown(
+              value: statusFilter,
+              options: statuses,
+              onChanged: (v) => setState(() => statusFilter = v));
+          final searchField = TextField(
+              onChanged: (value) => setState(() => query = value),
+              decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.search),
+                  hintText: 'Search here',
+                  isDense: true));
+          if (narrow) {
+            return Column(children: [
+              Row(children: [
+                Expanded(child: gradeField),
+                const SizedBox(width: 10),
+                Expanded(child: statusField),
+              ]),
+              const SizedBox(height: 10),
+              searchField,
+            ]);
+          }
+          return Row(children: [
+            Expanded(child: gradeField),
+            const SizedBox(width: 10),
+            Expanded(child: statusField),
+            const SizedBox(width: 10),
+            Expanded(flex: 2, child: searchField),
+          ]);
+        }),
         const SizedBox(height: 18),
         LayoutBuilder(builder: (_, constraints) {
           final cols = constraints.maxWidth > 1000
@@ -1415,7 +1559,7 @@ class _StudentsPageState extends State<StudentsPage> {
               crossAxisCount: cols,
               crossAxisSpacing: 14,
               mainAxisSpacing: 14,
-              mainAxisExtent: cols == 1 ? 220 : 210,
+              mainAxisExtent: cols == 1 ? 230 : 220,
             ),
             itemCount: showSkeleton ? 8 : filtered.length,
             itemBuilder: (_, i) => showSkeleton
@@ -1471,7 +1615,7 @@ class _FilterDropdown extends StatelessWidget {
       );
 }
 
-/// "Crew card"  ? avatar, name + handle-style admission number, role/status
+/// "Crew card"  avatar, name + handle-style admission number, role/status
 /// tag, then a two-column stat row (mirrors Clients/Pricing in the reference).
 class _StudentCard extends StatelessWidget {
   const _StudentCard({required this.student});
@@ -1480,130 +1624,148 @@ class _StudentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
         builder: (context, constraints) {
-          final maxWidth = constraints.maxWidth;
-          return Container(
-            padding: EdgeInsets.all(
-              maxWidth > 1000
-                  ? 20
-                  : maxWidth > 700
-                      ? 20
-                      : maxWidth > 460
-                          ? 14
-                          : 14,
-            ),
-            decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppTheme.line)),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                CircleAvatar(
-                    radius: 20,
-                    backgroundImage: student.avatarUrl == null
-                        ? null
-                        : NetworkImage(student.avatarUrl!),
-                    backgroundColor: AppTheme.peach.withValues(alpha: .18),
-                    child: student.avatarUrl == null
-                        ? Text(student.name.substring(0, 1),
-                            style: const TextStyle(
-                                color: AppTheme.peach,
-                                fontWeight: FontWeight.w800))
-                        : null),
-                const SizedBox(width: 10),
-                Expanded(
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                      Text(student.name,
-                          style: const TextStyle(
-                              color: AppTheme.ink,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800),
-                          overflow: TextOverflow.ellipsis),
-                      Text('@${student.admissionNo}',
-                          style: const TextStyle(
-                              color: AppTheme.muted, fontSize: 11)),
-                    ])),
-                _StatusPill(
-                    label: student.status,
-                    positive: student.status == 'Active'),
-              ]),
-              const SizedBox(height: 12),
-              Container(
-                  width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => StudentDetails(
+                              student: student,
+                              store: _store(context),
+                            ))),
+                child: Container(
+                  padding: EdgeInsets.all(
+                    constraints.maxWidth > 1000
+                        ? 20
+                        : constraints.maxWidth > 700
+                            ? 20
+                            : constraints.maxWidth > 460
+                                ? 14
+                                : 14,
+                  ),
                   decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 233, 238, 238),
-                      borderRadius: BorderRadius.circular(8)),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: AppTheme.line)),
                   child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Guardian',
-                            style: const TextStyle(
-                                color: AppTheme.muted, fontSize: 10)),
-                        const SizedBox(height: 4),
-                        Text(student.guardian,
-                            style: const TextStyle(
-                                color: AppTheme.ink,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600),
-                            overflow: TextOverflow.ellipsis),
-                      ])),
-              const SizedBox(height: 12),
-              Row(children: [
-                Expanded(
-                    child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                  decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 233, 238, 238),
-                      borderRadius: BorderRadius.circular(8)),
-                  child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Grade',
-                            style:
-                                TextStyle(color: AppTheme.muted, fontSize: 10)),
-                        Text(student.grade,
-                            style: const TextStyle(
-                                color: AppTheme.ink,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700))
+                        Row(children: [
+                          CircleAvatar(
+                              radius: 20,
+                              backgroundImage: student.avatarUrl == null
+                                  ? null
+                                  : NetworkImage(student.avatarUrl!),
+                              backgroundColor:
+                                  AppTheme.peach.withValues(alpha: .18),
+                              child: student.avatarUrl == null
+                                  ? Text(student.name.substring(0, 1),
+                                      style: const TextStyle(
+                                          color: AppTheme.peach,
+                                          fontWeight: FontWeight.w800))
+                                  : null),
+                          const SizedBox(width: 10),
+                          Expanded(
+                              child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                Text(student.name,
+                                    style: const TextStyle(
+                                        color: AppTheme.ink,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w800),
+                                    overflow: TextOverflow.ellipsis),
+                                Text('@${student.admissionNo}',
+                                    style: const TextStyle(
+                                        color: AppTheme.muted, fontSize: 11),
+                                    overflow: TextOverflow.ellipsis),
+                              ])),
+                          const SizedBox(width: 6),
+                          _StatusPill(
+                              label: student.status,
+                              positive: student.status == 'Active'),
+                        ]),
+                        const SizedBox(height: 12),
+                        Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 15, vertical: 10),
+                            decoration: BoxDecoration(
+                                color: const Color.fromARGB(255, 233, 238, 238),
+                                borderRadius: BorderRadius.circular(8)),
+                            child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Guardian',
+                                      style: TextStyle(
+                                          color: AppTheme.muted, fontSize: 10)),
+                                  const SizedBox(height: 4),
+                                  Text(student.guardian,
+                                      style: const TextStyle(
+                                          color: AppTheme.ink,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600),
+                                      overflow: TextOverflow.ellipsis),
+                                ])),
+                        const SizedBox(height: 12),
+                        Row(children: [
+                          Expanded(
+                              child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 15, vertical: 10),
+                            decoration: BoxDecoration(
+                                color: const Color.fromARGB(255, 233, 238, 238),
+                                borderRadius: BorderRadius.circular(8)),
+                            child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Grade',
+                                      style: TextStyle(
+                                          color: AppTheme.muted, fontSize: 10)),
+                                  Text(student.grade,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          color: AppTheme.ink,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700))
+                                ]),
+                          )),
+                          const SizedBox(width: 8),
+                          Expanded(
+                              child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 15, vertical: 10),
+                            decoration: BoxDecoration(
+                                color: const Color(0xFFF5F6F6),
+                                borderRadius: BorderRadius.circular(8)),
+                            child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Balance',
+                                      style: TextStyle(
+                                          color: AppTheme.muted, fontSize: 10)),
+                                  Text(
+                                      student.balance == 0
+                                          ? 'Paid'
+                                          : _money.format(student.balance),
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                          color: student.balance == 0
+                                              ? AppTheme.green
+                                              : AppTheme.peach,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w800))
+                                ]),
+                          )),
+                        ]),
                       ]),
                 )),
-                const SizedBox(width: 8),
-                Expanded(
-                    child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                  decoration: BoxDecoration(
-                      color: const Color(0xFFF5F6F6),
-                      borderRadius: BorderRadius.circular(8)),
-                  child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Balance',
-                            style:
-                                TextStyle(color: AppTheme.muted, fontSize: 10)),
-                        Text(
-                            student.balance == 0
-                                ? 'Paid'
-                                : _money.format(student.balance),
-                            style: TextStyle(
-                                color: student.balance == 0
-                                    ? AppTheme.green
-                                    : AppTheme.peach,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800))
-                      ]),
-                )),
-              ]),
-            ]),
           );
         },
       );
@@ -1646,7 +1808,7 @@ class ClassesPage extends StatelessWidget {
                 crossAxisCount: cols,
                 crossAxisSpacing: 14,
                 mainAxisSpacing: 14,
-                childAspectRatio: 1.15),
+                childAspectRatio: cols == 1 ? 1.6 : 1.15),
             itemCount: showSkeleton ? 8 : store.classes.length,
             itemBuilder: (_, i) => showSkeleton
                 ? const _CrewCardSkeleton()
@@ -1678,77 +1840,91 @@ class _ClassCard extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppTheme.line)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                    color: _classColor(schoolClass.id).withValues(alpha: .13),
-                    borderRadius: BorderRadius.circular(12)),
-                child: Icon(Icons.school_outlined,
-                    color: _classColor(schoolClass.id), size: 20)),
-            const SizedBox(width: 10),
-            Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  Text('${schoolClass.name} ${schoolClass.stream}',
-                      style: const TextStyle(
-                          color: AppTheme.ink,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13),
-                      overflow: TextOverflow.ellipsis),
-                  Text('@${schoolClass.stream.toLowerCase()}',
-                      style:
-                          const TextStyle(color: AppTheme.muted, fontSize: 11)),
-                ])),
-            const Icon(Icons.more_horiz, color: AppTheme.muted),
-          ]),
-          const SizedBox(height: 12),
-          Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                  color: const Color(0xFFF5F6F6),
-                  borderRadius: BorderRadius.circular(8)),
-              child: const Text('Class teacher',
-                  style: TextStyle(color: AppTheme.muted, fontSize: 10))),
-          const SizedBox(height: 4),
-          Text(schoolClass.teacher,
-              style: const TextStyle(
-                  color: AppTheme.ink,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600),
-              overflow: TextOverflow.ellipsis),
-          const Spacer(flex: 20),
-          const Divider(height: 20),
-          Row(children: [
-            Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  const Text('Students',
-                      style: TextStyle(color: AppTheme.muted, fontSize: 10)),
-                  Text('${schoolClass.studentsCount}',
-                      style: const TextStyle(
-                          color: AppTheme.ink,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700))
-                ])),
-            Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  const Text('Fee target',
-                      style: TextStyle(color: AppTheme.muted, fontSize: 10)),
-                  Text(_money.format(schoolClass.feeTarget),
-                      style: const TextStyle(
-                          color: AppTheme.ink,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800))
-                ])),
-          ]),
-        ]),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                        color:
+                            _classColor(schoolClass.id).withValues(alpha: .13),
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Icon(Icons.school_outlined,
+                        color: _classColor(schoolClass.id), size: 20)),
+                const SizedBox(width: 10),
+                Expanded(
+                    child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text('${schoolClass.name} ${schoolClass.stream}',
+                          style: const TextStyle(
+                              color: AppTheme.ink,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13),
+                          overflow: TextOverflow.ellipsis),
+                      Text('@${schoolClass.stream.toLowerCase()}',
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              color: AppTheme.muted, fontSize: 11)),
+                    ])),
+                const Icon(Icons.more_horiz, color: AppTheme.muted),
+              ]),
+              const SizedBox(height: 12),
+              Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                      color: const Color(0xFFF5F6F6),
+                      borderRadius: BorderRadius.circular(8)),
+                  child: const Text('Class teacher',
+                      style: TextStyle(color: AppTheme.muted, fontSize: 10))),
+              const SizedBox(height: 4),
+              Text(schoolClass.teacher,
+                  style: const TextStyle(
+                      color: AppTheme.ink,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600),
+                  overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 12),
+              Row(children: [
+                Expanded(
+                    child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      const Text('Students',
+                          style:
+                              TextStyle(color: AppTheme.muted, fontSize: 10)),
+                      Text('${schoolClass.studentsCount}',
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              color: AppTheme.ink,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700))
+                    ])),
+                Expanded(
+                    child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      const Text('Fee target',
+                          style:
+                              TextStyle(color: AppTheme.muted, fontSize: 10)),
+                      Text(_money.format(schoolClass.feeTarget),
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              color: AppTheme.ink,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800))
+                    ])),
+              ]),
+            ]),
       );
 }
 
@@ -1762,6 +1938,7 @@ class _CrewCardSkeleton extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppTheme.line)),
         child: const Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(children: [
@@ -1769,6 +1946,7 @@ class _CrewCardSkeleton extends StatelessWidget {
                 SizedBox(width: 10),
                 Expanded(
                     child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                       _Skeleton(width: 100, height: 13),
@@ -1778,8 +1956,9 @@ class _CrewCardSkeleton extends StatelessWidget {
               ]),
               SizedBox(height: 14),
               _Skeleton(width: 70, height: 18, radius: 8),
-              const Spacer(flex: 20),
-              Divider(height: 20),
+              SizedBox(height: 12),
+              Divider(height: 1),
+              SizedBox(height: 12),
               Row(children: [
                 Expanded(child: _Skeleton(width: 60, height: 11)),
                 Expanded(child: _Skeleton(width: 60, height: 11))
@@ -1788,8 +1967,13 @@ class _CrewCardSkeleton extends StatelessWidget {
       );
 }
 
+/// Payments table  scrolls horizontally on narrow screens instead of
+/// squeezing every column (and overflowing).
 class PaymentsPage extends StatelessWidget {
   const PaymentsPage({super.key});
+
+  static const double _minWidth = 720;
+
   @override
   Widget build(BuildContext context) {
     final store = _store(context);
@@ -1803,58 +1987,73 @@ class PaymentsPage extends StatelessWidget {
         Card(
             child: Padding(
                 padding: const EdgeInsets.all(8),
-                child: Column(children: [
-                  const _TableHeader(cells: [
-                    'Receipt',
-                    'Student',
-                    'Amount',
-                    'Method',
-                    'Channel',
-                    'Date'
-                  ]),
-                  if (showSkeleton)
-                    for (var i = 0; i < 6; i++) const _SkeletonRow(cells: 6)
-                  else
-                    for (final payment in store.payments)
-                      Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 14),
-                          child: Row(children: [
-                            Expanded(
-                                flex: 2,
-                                child: Text(payment.receiptNo,
-                                    style: const TextStyle(
-                                        color: AppTheme.ink,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 12))),
-                            Expanded(
-                                flex: 3,
-                                child: Text(payment.studentName,
-                                    style: const TextStyle(
-                                        color: AppTheme.muted, fontSize: 12))),
-                            Expanded(
-                                child: Text(_money.format(payment.amount),
-                                    style: const TextStyle(
-                                        color: AppTheme.green,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 12))),
-                            Expanded(
-                                child: Text(payment.method,
-                                    style: const TextStyle(
-                                        color: AppTheme.muted, fontSize: 12))),
-                            Expanded(
-                                child: _Pill(
-                                    label: payment.channel,
-                                    color: payment.channel == 'Automated'
-                                        ? AppTheme.blue
-                                        : AppTheme.peach)),
-                            Expanded(
-                                child: Text(
-                                    _date.format(payment.paidAt.toLocal()),
-                                    style: const TextStyle(
-                                        color: AppTheme.muted, fontSize: 11))),
-                          ])),
-                ]))),
+                child: LayoutBuilder(builder: (context, constraints) {
+                  final table = Column(children: [
+                    const _TableHeader(cells: [
+                      'Receipt',
+                      'Student',
+                      'Amount',
+                      'Method',
+                      'Channel',
+                      'Date'
+                    ]),
+                    if (showSkeleton)
+                      for (var i = 0; i < 6; i++) const _SkeletonRow(cells: 6)
+                    else
+                      for (final payment in store.payments)
+                        Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 14),
+                            child: Row(children: [
+                              Expanded(
+                                  flex: 2,
+                                  child: Text(payment.receiptNo,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          color: AppTheme.ink,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12))),
+                              Expanded(
+                                  flex: 3,
+                                  child: Text(payment.studentName,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          color: AppTheme.muted,
+                                          fontSize: 12))),
+                              Expanded(
+                                  child: Text(_money.format(payment.amount),
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          color: AppTheme.green,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12))),
+                              Expanded(
+                                  child: Text(payment.method,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          color: AppTheme.muted,
+                                          fontSize: 12))),
+                              Expanded(
+                                  child: _Pill(
+                                      label: payment.channel,
+                                      color: payment.channel == 'Automated'
+                                          ? AppTheme.blue
+                                          : AppTheme.peach)),
+                              Expanded(
+                                  child: Text(
+                                      _date.format(payment.paidAt.toLocal()),
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          color: AppTheme.muted,
+                                          fontSize: 11))),
+                            ])),
+                  ]);
+                  if (constraints.maxWidth >= _minWidth) return table;
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(width: _minWidth, child: table),
+                  );
+                }))),
       ]),
       if (store.isAccountant)
         Positioned(
@@ -1871,7 +2070,7 @@ class PaymentsPage extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Notifications  ? GlowBoard "Services" style: category sections each with
+// Notifications  GlowBoard "Services" style: category sections each with
 // their own action button, cards arranged in a grid.
 // ---------------------------------------------------------------------------
 
@@ -1913,6 +2112,7 @@ class _NotificationGroup extends StatelessWidget {
       Row(children: [
         Expanded(
             child: Text(title,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                     color: AppTheme.ink,
                     fontSize: 15,
@@ -1939,7 +2139,7 @@ class _NotificationGroup extends StatelessWidget {
               crossAxisCount: cols,
               crossAxisSpacing: 14,
               mainAxisSpacing: 14,
-              childAspectRatio: 1.5),
+              childAspectRatio: cols == 1 ? 2.2 : 1.5),
           itemCount: items.length,
           itemBuilder: (_, i) => _NotificationCard(item: items[i]),
         );
@@ -1958,46 +2158,55 @@ class _NotificationCard extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppTheme.line)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Expanded(
-                child: Text(item.title,
-                    style: const TextStyle(
-                        color: AppTheme.ink,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800),
-                    overflow: TextOverflow.ellipsis)),
-            const Icon(Icons.more_horiz, color: AppTheme.muted, size: 18),
-          ]),
-          const SizedBox(height: 3),
-          Text(item.read ? 'Read' : 'Unread',
-              style: TextStyle(
-                  color: item.read ? AppTheme.muted : AppTheme.peach,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700)),
-          const SizedBox(height: 10),
-          Expanded(
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Expanded(
+                    child: Text(item.title,
+                        style: const TextStyle(
+                            color: AppTheme.ink,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800),
+                        overflow: TextOverflow.ellipsis)),
+                const Icon(Icons.more_horiz, color: AppTheme.muted, size: 18),
+              ]),
+              const SizedBox(height: 3),
+              Text(item.read ? 'Read' : 'Unread',
+                  style: TextStyle(
+                      color: item.read ? AppTheme.muted : AppTheme.peach,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700)),
+              const SizedBox(height: 10),
               Expanded(
-                  child: Text(item.body,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: AppTheme.muted, fontSize: 11, height: 1.4))),
-              const SizedBox(width: 8),
-              Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                      color: _typeColor(item.type).withValues(alpha: .12),
-                      borderRadius: BorderRadius.circular(12)),
-                  child: Icon(_typeIcon(item.type),
-                      color: _typeColor(item.type), size: 17)),
+                child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                          child: Text(item.body,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  color: AppTheme.muted,
+                                  fontSize: 11,
+                                  height: 1.4))),
+                      const SizedBox(width: 8),
+                      Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                              color:
+                                  _typeColor(item.type).withValues(alpha: .12),
+                              borderRadius: BorderRadius.circular(12)),
+                          child: Icon(_typeIcon(item.type),
+                              color: _typeColor(item.type), size: 17)),
+                    ]),
+              ),
+              Text(_date.format(item.createdAt.toLocal()),
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: AppTheme.muted, fontSize: 10)),
             ]),
-          ),
-          Text(_date.format(item.createdAt.toLocal()),
-              style: const TextStyle(color: AppTheme.muted, fontSize: 10)),
-        ]),
       );
 }
 
@@ -2025,6 +2234,7 @@ class _NotificationGroupSkeleton extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppTheme.line)),
                   child: const Column(
+                      mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _Skeleton(width: 100, height: 13),
@@ -2080,9 +2290,11 @@ class MessagesPage extends StatelessWidget {
                     const SizedBox(width: 13),
                     Expanded(
                         child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                           Text(campaign.campaign,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                   color: AppTheme.ink,
                                   fontSize: 14,
@@ -2090,9 +2302,11 @@ class MessagesPage extends StatelessWidget {
                           const SizedBox(height: 5),
                           Text(
                               '${campaign.audience} · ${campaign.recipientCount} recipients',
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                   color: AppTheme.muted, fontSize: 12))
                         ])),
+                    const SizedBox(width: 8),
                     _StatusPill(
                         label: campaign.status,
                         positive: campaign.status == 'Sent'),
@@ -2113,6 +2327,7 @@ class _CampaignSkeleton extends StatelessWidget {
             SizedBox(width: 13),
             Expanded(
                 child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                   _Skeleton(width: 140, height: 14),
@@ -2146,17 +2361,21 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(children: [
         Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title,
-              style: const TextStyle(
-                  color: AppTheme.ink,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800)),
-          const SizedBox(height: 4),
-          Text(subtitle,
-              style: const TextStyle(color: AppTheme.muted, fontSize: 12))
-        ])),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+              Text(title,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      color: AppTheme.ink,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800)),
+              const SizedBox(height: 4),
+              Text(subtitle,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: AppTheme.muted, fontSize: 12))
+            ])),
         if (actionLabel != null)
           FilledButton.icon(
               onPressed: onAction,
@@ -2179,6 +2398,7 @@ class _TableHeader extends StatelessWidget {
           Expanded(
               flex: i == 0 ? 2 : 1,
               child: Text(cells[i].toUpperCase(),
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                       color: AppTheme.muted,
                       fontSize: 9,
@@ -2199,6 +2419,7 @@ class _StatusPill extends StatelessWidget {
               .withValues(alpha: .11),
           borderRadius: BorderRadius.circular(30)),
       child: Text(label,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
               color: positive ? AppTheme.green : AppTheme.peach,
               fontSize: 10,
@@ -2222,7 +2443,8 @@ class _OfflineBanner extends StatelessWidget {
           const SizedBox(width: 10),
           const Expanded(
               child: Text(
-                  "Can't reach the school API  ? showing a preview. Retrying automatically ?",
+                  "Can't reach the school API  showing a preview. Retrying automatically",
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                       color: AppTheme.ink,
                       fontSize: 12,
@@ -2339,16 +2561,18 @@ IconData _channelIcon(String channel) =>
             ? Icons.email_outlined
             : Icons.sms_outlined;
 
-Future<void> _showStudentDialog(BuildContext context, SchoolStore store) async {
-  final name = TextEditingController();
-  final admission = TextEditingController();
-  final grade = TextEditingController(text: 'Grade 8');
-  final guardian = TextEditingController();
-  final phone = TextEditingController();
+Future<void> _showStudentDialog(BuildContext context, SchoolStore store,
+    [Student? student]) async {
+  final isEditing = student != null;
+  final name = TextEditingController(text: student?.name ?? '');
+  final admission = TextEditingController(text: student?.admissionNo ?? '');
+  final grade = TextEditingController(text: student?.grade ?? '');
+  final guardian = TextEditingController(text: student?.guardian ?? '');
+  final phone = TextEditingController(text: student?.guardianPhone ?? '');
   await showDialog<void>(
       context: context,
       builder: (_) => _FormDialog(
-          title: 'Add student',
+          title: isEditing ? 'Edit student' : 'Add student',
           fields: [
             ('Student name', name),
             ('Admission number', admission),
@@ -2356,15 +2580,20 @@ Future<void> _showStudentDialog(BuildContext context, SchoolStore store) async {
             ('Parent / guardian', guardian),
             ('Guardian phone', phone)
           ],
-          submitLabel: 'Save student',
+          submitLabel: isEditing ? 'Save student' : 'Add student',
           onSubmit: () async {
-            await store.addStudent({
+            final payload = {
               'name': name.text,
               'admissionNo': admission.text,
               'grade': grade.text,
               'guardian': guardian.text,
               'guardianPhone': phone.text
-            });
+            };
+            if (isEditing) {
+              await store.addStudent(payload);
+            } else {
+              await store.addStudent(payload);
+            }
           }));
 }
 
