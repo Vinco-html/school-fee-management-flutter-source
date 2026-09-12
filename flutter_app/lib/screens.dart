@@ -515,42 +515,41 @@ class _RolePicker extends StatelessWidget {
   final ValueChanged<UserRole> onSelectRole;
   @override
   Widget build(BuildContext context) => Container(
-          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-          decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppTheme.line)),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            CircleAvatar(
-                radius: 15,
-                backgroundColor: store.isAccountant
-                    ? AppTheme.blue.withValues(alpha: .16)
-                    : AppTheme.peach.withValues(alpha: .24),
-                child: Icon(
-                    store.isAccountant
-                        ? Icons.calculate_outlined
-                        : Icons.admin_panel_settings_outlined,
-                    color: store.isAccountant ? AppTheme.blue : AppTheme.peach,
-                    size: 17)),
-            const SizedBox(width: 8),
-            Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(store.isAccountant ? 'Accountant' : 'Jane Mwangi',
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: AppTheme.ink,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700)),
-                  const Text('Sr. School admin',
-                      style: TextStyle(color: AppTheme.muted, fontSize: 10)),
-                ]),
-            const SizedBox(width: 4),
-            const Icon(Icons.keyboard_arrow_down,
-                size: 17, color: AppTheme.muted),
-          ]),
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppTheme.line)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          CircleAvatar(
+              radius: 15,
+              backgroundColor: store.isAccountant
+                  ? AppTheme.blue.withValues(alpha: .16)
+                  : AppTheme.peach.withValues(alpha: .24),
+              child: Icon(
+                  store.isAccountant
+                      ? Icons.calculate_outlined
+                      : Icons.admin_panel_settings_outlined,
+                  color: store.isAccountant ? AppTheme.blue : AppTheme.peach,
+                  size: 17)),
+          const SizedBox(width: 8),
+          Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(store.isAccountant ? 'Accountant' : 'Jane Mwangi',
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        color: AppTheme.ink,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700)),
+                const Text('Sr. School admin',
+                    style: TextStyle(color: AppTheme.muted, fontSize: 10)),
+              ]),
+          const SizedBox(width: 4),
+          const Icon(Icons.keyboard_arrow_down,
+              size: 17, color: AppTheme.muted),
+        ]),
       );
 }
 
