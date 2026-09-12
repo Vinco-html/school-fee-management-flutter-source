@@ -14,6 +14,9 @@ class ApiClient {
             .replaceAll(RegExp(r'/$'), '');
 
   final String baseUrl;
+  String? token;
+
+  void setToken(String? value) => token = value;
 
   Future<dynamic> _request(
     String path, {
@@ -21,7 +24,10 @@ class ApiClient {
     Map<String, dynamic>? body,
   }) async {
     final uri = Uri.parse('$baseUrl$path');
-    final headers = {'Content-Type': 'application/json'};
+    final headers = {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
     final response = switch (method) {
       'POST' =>
         await http.post(uri, headers: headers, body: jsonEncode(body ?? {})),
@@ -38,6 +44,7 @@ class ApiClient {
               : null;
       throw ApiException(message, response.statusCode);
     }
+
     return decoded;
   }
 
@@ -54,6 +61,26 @@ class ApiClient {
   String _plainError(String body) {
     final pre = RegExp(r'<pre>(.*?)</pre>', dotAll: true).firstMatch(body);
     return (pre?.group(1) ?? body).replaceAll(RegExp(r'<[^>]*>'), '').trim();
+  }
+
+  Future<Map<String, dynamic>> login(
+      {required String email, required String password}) async {
+    return await _request('/auth/login',
+        method: 'POST',
+        body: {'email': email, 'password': password}) as Map<String, dynamic>;
+  }
+
+  Future<AuthUser> signup(
+      {required String name,
+      required String email,
+      required String password}) async {
+    final response = await _request('/auth/signup', method: 'POST', body: {
+      'name': name,
+      'email': email,
+      'password': password,
+      'role': 'accountant',
+    }) as Map<String, dynamic>;
+    return AuthUser.fromJson(response['user'] as Map<String, dynamic>);
   }
 
   Future<DashboardSummary> dashboard() async => DashboardSummary.fromJson(

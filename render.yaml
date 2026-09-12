@@ -11,6 +11,10 @@ services:
         fromDatabase:
           name: school-fee-db
           property: connectionString
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
 
 databases:
   - name: school-fee-db

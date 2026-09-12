@@ -8,6 +8,15 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 
+export const usersTable = pgTable("school_users", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  role: text("role").notNull().default("accountant"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const studentsTable = pgTable("school_students", {
   id: serial("id").primaryKey(),
   admissionNo: text("admission_no").notNull().unique(),
@@ -109,6 +118,7 @@ export const insertMessageSchema = createInsertSchema(messagesTable).omit({
 });
 
 export type Student = typeof studentsTable.$inferSelect;
+export type User = typeof usersTable.$inferSelect;
 export type SchoolClass = typeof classesTable.$inferSelect;
 export type Payment = typeof paymentsTable.$inferSelect;
 export type PendingPayment = typeof pendingPaymentsTable.$inferSelect;

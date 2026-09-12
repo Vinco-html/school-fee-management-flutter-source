@@ -514,15 +514,7 @@ class _RolePicker extends StatelessWidget {
   final SchoolStore store;
   final ValueChanged<UserRole> onSelectRole;
   @override
-  Widget build(BuildContext context) => PopupMenuButton<UserRole>(
-        initialValue: store.role,
-        onSelected: onSelectRole,
-        itemBuilder: (_) => const [
-          PopupMenuItem(value: UserRole.admin, child: Text('Preview as Admin')),
-          PopupMenuItem(
-              value: UserRole.accountant, child: Text('Preview as Accountant')),
-        ],
-        child: Container(
+  Widget build(BuildContext context) => Container(
           padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
           decoration: BoxDecoration(
               color: Colors.white,
