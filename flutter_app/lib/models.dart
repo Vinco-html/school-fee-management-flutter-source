@@ -35,23 +35,26 @@ class Student {
 }
 
 class SchoolClass {
-  const SchoolClass({
-    required this.id,
-    required this.name,
-    required this.stream,
-    required this.studentsCount,
-    required this.teacher,
-    required this.feeTarget,
-    required this.term,
-  });
+  const SchoolClass(
+      {required this.id,
+      required this.feePaid,
+      required this.name,
+      required this.stream,
+      required this.studentsCount,
+      required this.teacher,
+      required this.feeTarget,
+      required this.term,
+      required this.feeBalance});
 
   final int id;
+  final int feePaid;
   final String name;
   final String stream;
   final int studentsCount;
   final String teacher;
   final int feeTarget;
   final String term;
+  final int feeBalance;
 
   factory SchoolClass.fromJson(Map<String, dynamic> json) => SchoolClass(
         id: _toInt(json['id']),
@@ -60,7 +63,9 @@ class SchoolClass {
         studentsCount: _toInt(json['studentsCount']),
         teacher: json['teacher']?.toString() ?? '',
         feeTarget: _toInt(json['feeTarget']),
+        feePaid: _toInt(json['feePaid']),
         term: json['term']?.toString() ?? 'Term 1',
+        feeBalance: _toInt(json['feeBalance']),
       );
 }
 
@@ -97,6 +102,38 @@ class Payment {
         status: json['status']?.toString() ?? '',
         channel: json['channel']?.toString() ?? '',
         paidAt: DateTime.tryParse(json['paidAt']?.toString() ?? '') ??
+            DateTime.now(),
+      );
+}
+
+class PendingPayment {
+  const PendingPayment({
+    required this.id,
+    required this.transactionId,
+    required this.amount,
+    required this.accountReference,
+    required this.payerName,
+    required this.candidateIds,
+    required this.createdAt,
+  });
+
+  final int id;
+  final String transactionId;
+  final int amount;
+  final String accountReference;
+  final String payerName;
+  final List<int> candidateIds;
+  final DateTime createdAt;
+
+  factory PendingPayment.fromJson(Map<String, dynamic> json) => PendingPayment(
+        id: _toInt(json['id']),
+        transactionId: json['transactionId']?.toString() ?? '',
+        amount: _toInt(json['amount']),
+        accountReference: json['accountReference']?.toString() ?? '',
+        payerName: json['payerName']?.toString() ?? '',
+        candidateIds:
+            (json['candidateIds'] as List<dynamic>? ?? []).map(_toInt).toList(),
+        createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
             DateTime.now(),
       );
 }

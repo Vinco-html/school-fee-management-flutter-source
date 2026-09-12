@@ -25,6 +25,7 @@ class SchoolStore extends ChangeNotifier {
   List<Student> students = [];
   List<SchoolClass> classes = [];
   List<Payment> payments = [];
+  List<PendingPayment> pendingPayments = [];
   List<Activity> activities = [];
   List<SchoolNotification> notifications = [];
   List<Campaign> campaigns = [];
@@ -97,14 +98,34 @@ class SchoolStore extends ChangeNotifier {
     await load();
   }
 
+  Future<void> deleteStudent(int id) async {
+    await api.deleteStudent(id);
+    await load();
+  }
+
   Future<void> addClass(Map<String, dynamic> body) async {
     await api.addClass(body);
+    await load();
+  }
+
+  Future<void> deleteClass(int id) async {
+    await api.deleteClass(id);
     await load();
   }
 
   Future<void> addPayment(Map<String, dynamic> body) async {
     await api.addManualPayment(body);
     await load();
+  }
+
+  Future<void> resolvePendingPayment(int pendingId, int studentId) async {
+    await api.resolvePendingPayment(pendingId, studentId);
+    await load();
+  }
+
+  Future<void> loadPendingPayments() async {
+    pendingPayments = await api.pendingPayments();
+    notifyListeners();
   }
 
   Future<void> syncEquity() async {

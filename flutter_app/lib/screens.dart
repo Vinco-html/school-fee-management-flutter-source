@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:school_fee_management/class_details.dart';
 import 'package:school_fee_management/student_details.dart';
 
 import 'models.dart';
@@ -34,7 +35,8 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final wide = MediaQuery.sizeOf(context).width >= 900;
+    final wide =
+        MediaQuery.sizeOf(context).width >= 1200; // Improved breakpoint
     final labels = [
       'Dashboard',
       'Students',
@@ -394,8 +396,7 @@ class _NavItem extends StatelessWidget {
       );
 }
 
-/// Top bar  title + date-ish subtitle, search with a mic affordance,
-/// theme/notification icons, role picker (stands in for the profile chip).
+/// Top bar - IMPROVED: hamburger only on mobile, menu spread on desktop
 class _TopBar extends StatelessWidget {
   const _TopBar(
       {required this.store,
@@ -410,7 +411,9 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
         builder: (context, constraints) {
-          final compact = constraints.maxWidth < 700;
+          final isMobile =
+              constraints.maxWidth < 1200; // Mobile/tablet threshold
+
           final heading = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -427,32 +430,48 @@ class _TopBar extends StatelessWidget {
                   style: const TextStyle(color: AppTheme.muted, fontSize: 12)),
             ],
           );
-          final menuButton = _RoundIcon(
+
+          final refreshButton = IconButton(
+              onPressed: onRefresh,
+              icon: const Icon(Icons.refresh_rounded, color: AppTheme.muted));
+
+          final hamburgerButton = _RoundIcon(
               icon: Icons.menu_rounded,
               onTap: onOpenMenu,
               dot: store.unreadCount > 0);
+
+          if (isMobile) {
+            // MOBILE/TABLET: Show hamburger menu
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(28, 22, 28, 10),
+              child: Row(children: [
+                Expanded(child: heading),
+                refreshButton,
+                const SizedBox(width: 4),
+                hamburgerButton,
+              ]),
+            );
+          }
+
+          // DESKTOP: Spread menu items in top bar
           return Padding(
             padding: const EdgeInsets.fromLTRB(28, 22, 28, 10),
-            child: compact
-                ? Row(children: [
-                    Expanded(child: heading),
-                    IconButton(
-                        onPressed: onRefresh,
-                        icon: const Icon(Icons.refresh_rounded,
-                            color: AppTheme.muted)),
-                    const SizedBox(width: 4),
-                    menuButton,
-                  ])
-                : Row(children: [
-                    Expanded(child: heading),
-                    const SizedBox(width: 12),
-                    IconButton(
-                        onPressed: onRefresh,
-                        icon: const Icon(Icons.refresh_rounded,
-                            color: AppTheme.muted)),
-                    const SizedBox(width: 4),
-                    menuButton,
-                  ]),
+            child: Row(
+              children: [
+                Expanded(child: heading),
+                refreshButton,
+                const SizedBox(width: 12),
+                _RolePicker(store: store, onSelectRole: store.setRole),
+                const SizedBox(width: 12),
+                _RoundIcon(
+                    icon: Icons.wb_sunny_outlined, onTap: () {}, dot: false),
+                const SizedBox(width: 4),
+                _RoundIcon(
+                    icon: Icons.notifications_none_rounded,
+                    onTap: () {},
+                    dot: store.unreadCount > 0),
+              ],
+            ),
           );
         },
       );
@@ -657,9 +676,7 @@ class _SideMenu extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Dashboard  Academix reference: 3 stat pills + course-statistics card,
-// a trend chart card, an activity table, and a right rail with a schedule
-// list plus a gradient "upcoming" card.
+// Dashboard  improved with better breakpoints
 // ---------------------------------------------------------------------------
 
 class DashboardPage extends StatelessWidget {
@@ -672,9 +689,16 @@ class DashboardPage extends StatelessWidget {
     return _PageScroll(
       children: [
         LayoutBuilder(builder: (context, constraints) {
-          final split = constraints.maxWidth > 980;
+          // IMPROVED: Better breakpoints (600, 1200)
+          final isMobile = constraints.maxWidth < 600;
+          final isTablet =
+              constraints.maxWidth >= 600 && constraints.maxWidth < 1200;
+          final isDesktop = constraints.maxWidth >= 1200;
 
-          final statCircles = Wrap(spacing: 10, runSpacing: 10, children: [
+          final spacing = isDesktop ? 18.0 : (isTablet ? 14.0 : 10.0);
+
+          final statCircles =
+              Wrap(spacing: spacing, runSpacing: spacing, children: [
             _StatCircle(
                 label: 'Balance',
                 value: '${summary.students}',
@@ -693,53 +717,49 @@ class DashboardPage extends StatelessWidget {
           ]);
           final courseStats = _CourseStatisticsCard(summary: summary);
 
-          // Stat circles sit above the fee-statistics card on small
-          // screens, and side by side with it on larger screens.
+          // Stat circles layout changes based on breakpoint
           final topRow = !store.isAccountant
               ? courseStats
-              : LayoutBuilder(builder: (context, inner) {
-                  final narrow = inner.maxWidth < 640;
-                  if (narrow) {
-                    return Column(
+              : (isMobile
+                  ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         statCircles,
-                        const SizedBox(height: 14),
+                        SizedBox(height: spacing),
                         courseStats,
                       ],
-                    );
-                  }
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(flex: 4, child: statCircles),
-                      const SizedBox(width: 14),
-                      Expanded(flex: 4, child: courseStats),
-                    ],
-                  );
-                });
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 4, child: statCircles),
+                        SizedBox(width: spacing),
+                        Expanded(flex: 4, child: courseStats),
+                      ],
+                    ));
 
           final left = Column(children: [
             topRow,
-            const SizedBox(height: 18),
+            SizedBox(height: spacing),
             _TrendCard(summary: summary),
-            const SizedBox(height: 18),
+            SizedBox(height: spacing),
             _ActivityTableCard(items: summary.recentActivity),
           ]);
           final right = Column(children: [
             _ScheduleCard(items: summary.recentActivity),
-            const SizedBox(height: 18),
+            SizedBox(height: spacing),
             _UpcomingCard(store: store),
-            const SizedBox(height: 18),
+            SizedBox(height: spacing),
             _MessageCard(store: store),
           ]);
-          return split
+
+          return isDesktop
               ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Expanded(flex: 7, child: left),
-                  const SizedBox(width: 18),
+                  SizedBox(width: spacing),
                   Expanded(flex: 4, child: right)
                 ])
-              : Column(children: [left, const SizedBox(height: 18), right]);
+              : Column(children: [left, SizedBox(height: spacing), right]);
         }),
       ],
     );
@@ -1343,19 +1363,19 @@ class _UpcomingCard extends StatelessWidget {
             children: [
               Row(children: [
                 const Expanded(
-                    child: Text('Upcoming',
+                    child: Text('Payments',
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                             color: Colors.white70,
                             fontSize: 12,
                             fontWeight: FontWeight.w700))),
                 TextButton(
-                    onPressed: () => store.syncEquity(),
+                    onPressed: () => _showPendingPayments(context, store),
                     style: TextButton.styleFrom(foregroundColor: Colors.white),
-                    child: const Text('Learn more'))
+                    child: const Text('Review'))
               ]),
               const SizedBox(height: 4),
-              const Text('Equity Bank sync',
+              const Text('TUMA Paybill',
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                       color: Colors.white,
@@ -1363,21 +1383,129 @@ class _UpcomingCard extends StatelessWidget {
                       fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
               const Text(
-                  'Automatically sync new bank deposits into receipts and balances.',
+                  'Parents pay via the connected paybill using the student account number or name.',
                   style: TextStyle(
                       color: Colors.white, fontSize: 12, height: 1.4)),
               const SizedBox(height: 16),
               Wrap(spacing: 8, runSpacing: 8, children: [
                 const _GlassPill(
-                    icon: Icons.access_time_rounded, label: 'Runs hourly'),
+                    icon: Icons.account_balance_outlined,
+                    label: 'Webhook active'),
                 _GlassPill(
                     icon: Icons.calendar_today_outlined,
                     label: DateFormat('d MMM').format(DateTime.now())),
                 _GlassPill(
                     icon: Icons.link_rounded,
-                    label: store.loading ? 'Syncing' : 'Ready'),
+                    label: store.pendingPayments.isEmpty
+                        ? 'No confirmations'
+                        : '${store.pendingPayments.length} to confirm'),
               ]),
+              if (store.pendingPayments.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Text(
+                  '${store.pendingPayments.length} payment${store.pendingPayments.length == 1 ? '' : 's'} waiting for student confirmation',
+                  style: const TextStyle(
+                      color: Colors.white, fontSize: 11, height: 1.3),
+                ),
+              ],
             ]),
+      );
+}
+
+Future<void> _showPendingPayments(
+    BuildContext context, SchoolStore store) async {
+  await store.loadPendingPayments();
+  if (store.pendingPayments.isEmpty) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('No unmatched TUMA payments are waiting.')));
+    }
+    return;
+  }
+  await showDialog<void>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('Confirm incoming payments'),
+      content: SizedBox(
+        width: 460,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final pending in store.pendingPayments)
+                _PendingPaymentTile(
+                  pending: pending,
+                  students: store.students
+                      .where((student) =>
+                          pending.candidateIds.contains(student.id))
+                      .toList(),
+                  onResolve: (studentId) async {
+                    await store.resolvePendingPayment(pending.id, studentId);
+                    if (context.mounted) Navigator.pop(context);
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close')),
+      ],
+    ),
+  );
+}
+
+class _PendingPaymentTile extends StatelessWidget {
+  const _PendingPaymentTile({
+    required this.pending,
+    required this.students,
+    required this.onResolve,
+  });
+  final PendingPayment pending;
+  final List<Student> students;
+  final Future<void> Function(int studentId) onResolve;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F8F9),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.line),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(_money.format(pending.amount),
+                style: const TextStyle(
+                    color: AppTheme.ink, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 3),
+            Text(
+              '${pending.payerName} · Account ${pending.accountReference}',
+              style: const TextStyle(color: AppTheme.muted, fontSize: 11),
+            ),
+            const SizedBox(height: 8),
+            if (students.isEmpty)
+              const Text(
+                  'No exact student match. Check the account number before resolving.',
+                  style: TextStyle(color: AppTheme.peach, fontSize: 11))
+            else
+              for (final student in students)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => onResolve(student.id),
+                    icon: const Icon(Icons.person_add_alt_1_outlined, size: 16),
+                    label: Text(
+                        '${student.name} · ${student.grade} · ${student.admissionNo}'),
+                  ),
+                ),
+          ],
+        ),
       );
 }
 
@@ -1465,8 +1593,7 @@ class _Pill extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Students & Classes  GlowBoard "Our Crew" style: filter row, an "Add" pill
-// button, and a card grid (avatar, name/handle, role tag, two-stat row).
+// Students & Classes - IMPROVED grid breakpoints (600, 1200)
 // ---------------------------------------------------------------------------
 
 class StudentsPage extends StatefulWidget {
@@ -1507,7 +1634,8 @@ class _StudentsPageState extends State<StudentsPage> {
     return Stack(children: [
       _PageScroll(children: [
         LayoutBuilder(builder: (context, constraints) {
-          final narrow = constraints.maxWidth < 560;
+          // IMPROVED: Better threshold
+          final isMobile = constraints.maxWidth < 560;
           final gradeField = _FilterDropdown(
               value: gradeFilter,
               options: grades,
@@ -1522,7 +1650,7 @@ class _StudentsPageState extends State<StudentsPage> {
                   prefixIcon: Icon(Icons.search),
                   hintText: 'Search here',
                   isDense: true));
-          if (narrow) {
+          if (isMobile) {
             return Column(children: [
               Row(children: [
                 Expanded(child: gradeField),
@@ -1543,15 +1671,14 @@ class _StudentsPageState extends State<StudentsPage> {
         }),
         const SizedBox(height: 18),
         LayoutBuilder(builder: (_, constraints) {
-          final cols = constraints.maxWidth > 1000
+          // IMPROVED: Consistent breakpoints (600, 1200)
+          final cols = constraints.maxWidth > 1200
               ? 4
-              : constraints.maxWidth > 800
-                  ? 4
-                  : constraints.maxWidth > 756
-                      ? 3
-                      : constraints.maxWidth > 460
-                          ? 2
-                          : 1;
+              : constraints.maxWidth > 600
+                  ? 3
+                  : constraints.maxWidth > 400
+                      ? 2
+                      : 1;
           return GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -1794,11 +1921,12 @@ class ClassesPage extends StatelessWidget {
         ]),
         const SizedBox(height: 18),
         LayoutBuilder(builder: (_, constraints) {
-          final cols = constraints.maxWidth > 1000
+          // IMPROVED: Consistent breakpoints
+          final cols = constraints.maxWidth > 1200
               ? 4
-              : constraints.maxWidth > 700
+              : constraints.maxWidth > 600
                   ? 3
-                  : constraints.maxWidth > 460
+                  : constraints.maxWidth > 400
                       ? 2
                       : 1;
           return GridView.builder(
@@ -1833,98 +1961,222 @@ class ClassesPage extends StatelessWidget {
 class _ClassCard extends StatelessWidget {
   const _ClassCard({required this.schoolClass});
   final SchoolClass schoolClass;
+
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppTheme.line)),
-        child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                        color:
-                            _classColor(schoolClass.id).withValues(alpha: .13),
-                        borderRadius: BorderRadius.circular(12)),
-                    child: Icon(Icons.school_outlined,
-                        color: _classColor(schoolClass.id), size: 20)),
-                const SizedBox(width: 10),
-                Expanded(
-                    child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                      Text('${schoolClass.name} ${schoolClass.stream}',
-                          style: const TextStyle(
-                              color: AppTheme.ink,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 13),
-                          overflow: TextOverflow.ellipsis),
-                      Text('@${schoolClass.stream.toLowerCase()}',
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              color: AppTheme.muted, fontSize: 11)),
-                    ])),
-                const Icon(Icons.more_horiz, color: AppTheme.muted),
-              ]),
-              const SizedBox(height: 12),
-              Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, constraints) {
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => ClassDetails(
+                              schoolClass: schoolClass,
+                              store: _store(context),
+                            ))),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                      color: const Color(0xFFF5F6F6),
-                      borderRadius: BorderRadius.circular(8)),
-                  child: const Text('Class teacher',
-                      style: TextStyle(color: AppTheme.muted, fontSize: 10))),
-              const SizedBox(height: 4),
-              Text(schoolClass.teacher,
-                  style: const TextStyle(
-                      color: AppTheme.ink,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600),
-                  overflow: TextOverflow.ellipsis),
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 12),
-              Row(children: [
-                Expanded(
-                    child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                      const Text('Students',
-                          style:
-                              TextStyle(color: AppTheme.muted, fontSize: 10)),
-                      Text('${schoolClass.studentsCount}',
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              color: AppTheme.ink,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700))
-                    ])),
-                Expanded(
-                    child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                      const Text('Fee target',
-                          style:
-                              TextStyle(color: AppTheme.muted, fontSize: 10)),
-                      Text(_money.format(schoolClass.feeTarget),
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              color: AppTheme.ink,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800))
-                    ])),
-              ]),
-            ]),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: AppTheme.line)),
+                  child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                  color: _classColor(schoolClass.id)
+                                      .withValues(alpha: .13),
+                                  borderRadius: BorderRadius.circular(12)),
+                              child: Icon(Icons.school_outlined,
+                                  color: _classColor(schoolClass.id),
+                                  size: 20)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                              child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                Text(
+                                    '${schoolClass.name} ${schoolClass.stream}',
+                                    style: const TextStyle(
+                                        color: AppTheme.ink,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 13),
+                                    overflow: TextOverflow.ellipsis),
+                                Text('@${schoolClass.stream.toLowerCase()}',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        color: AppTheme.muted, fontSize: 11)),
+                              ])),
+                          PopupMenuButton<String>(
+                            tooltip: 'Class actions',
+                            icon: const Icon(Icons.more_horiz,
+                                color: AppTheme.muted),
+                            onSelected: (action) {
+                              if (action == 'delete') {
+                                _confirmDeleteClass(
+                                    context, _store(context), schoolClass);
+                              }
+                            },
+                            itemBuilder: (_) => const [
+                              PopupMenuItem<String>(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.delete_outline,
+                                        color: Colors.red, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('Delete class'),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ]),
+                        const SizedBox(height: 12),
+                        Row(spacing: 10, children: [
+                          Expanded(
+                              child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                      color: const Color.fromARGB(
+                                          0, 245, 246, 246),
+                                      borderRadius: BorderRadius.circular(8)),
+                                  child: Column(children: [
+                                    const Text('Class teacher',
+                                        style: TextStyle(
+                                            color: AppTheme.muted,
+                                            fontSize: 10)),
+                                    const SizedBox(height: 4),
+                                    Text(schoolClass.teacher,
+                                        style: const TextStyle(
+                                            color: AppTheme.ink,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600),
+                                        overflow: TextOverflow.ellipsis),
+                                  ]))),
+                          const VerticalDivider(
+                              width: 2,
+                              thickness: 1,
+                              color: Color.fromARGB(0, 68, 66, 66)),
+                          Expanded(
+                              child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                      color: const Color.fromARGB(
+                                          0, 245, 246, 246),
+                                      borderRadius: BorderRadius.circular(8)),
+                                  child: Column(children: [
+                                    const Text('Fee Paid',
+                                        style: TextStyle(
+                                            color: AppTheme.muted,
+                                            fontSize: 10)),
+                                    const SizedBox(height: 4),
+                                    Text(_money.format(schoolClass.feePaid),
+                                        style: const TextStyle(
+                                            color: AppTheme.ink,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600),
+                                        overflow: TextOverflow.ellipsis),
+                                  ]))),
+                          const VerticalDivider(
+                              width: 2,
+                              thickness: 1,
+                              color: Color.fromARGB(0, 68, 66, 66)),
+                          Expanded(
+                              child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                      color: const Color(0xFFF5F6F6),
+                                      borderRadius: BorderRadius.circular(8)),
+                                  child: Column(children: [
+                                    const Text('Fee Balance',
+                                        style: TextStyle(
+                                            color: AppTheme.muted,
+                                            fontSize: 10)),
+                                    const SizedBox(height: 4),
+                                    Text(_money.format(schoolClass.feeBalance),
+                                        style: const TextStyle(
+                                            color: AppTheme.ink,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600),
+                                        overflow: TextOverflow.ellipsis),
+                                  ]))),
+                        ]),
+                        const SizedBox(height: 12),
+                        const Divider(height: 1),
+                        const SizedBox(height: 12),
+                        Row(children: [
+                          Expanded(
+                              child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                const Text('Students',
+                                    style: TextStyle(
+                                        color: AppTheme.muted, fontSize: 10)),
+                                Text('${schoolClass.studentsCount}',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        color: AppTheme.ink,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700))
+                              ])),
+                          const VerticalDivider(
+                              width: 2,
+                              thickness: 1,
+                              color: Color.fromARGB(0, 68, 66, 66)),
+                          Expanded(
+                              child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                const Text('Fee target',
+                                    style: TextStyle(
+                                        color: AppTheme.muted, fontSize: 10)),
+                                Text(_money.format(schoolClass.feeTarget),
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        color: AppTheme.ink,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800))
+                              ])),
+                          const VerticalDivider(
+                              width: 1,
+                              thickness: 1,
+                              color: Color.fromARGB(0, 68, 66, 66)),
+                          Expanded(
+                              child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                const Text('Fee/Student',
+                                    style: TextStyle(
+                                        color: AppTheme.muted, fontSize: 10)),
+                                Text(
+                                    _money.format(schoolClass.feeTarget /
+                                        schoolClass.studentsCount),
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        color: AppTheme.ink,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800))
+                              ])),
+                        ]),
+                      ]),
+                )),
+          );
+        },
       );
 }
 
@@ -1967,8 +2219,7 @@ class _CrewCardSkeleton extends StatelessWidget {
       );
 }
 
-/// Payments table  scrolls horizontally on narrow screens instead of
-/// squeezing every column (and overflowing).
+/// Payments table - already has good horizontal scroll
 class PaymentsPage extends StatelessWidget {
   const PaymentsPage({super.key});
 
@@ -2070,8 +2321,7 @@ class PaymentsPage extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Notifications  GlowBoard "Services" style: category sections each with
-// their own action button, cards arranged in a grid.
+// Notifications  improved with consistent breakpoints
 // ---------------------------------------------------------------------------
 
 class NotificationsPage extends StatelessWidget {
@@ -2125,11 +2375,12 @@ class _NotificationGroup extends StatelessWidget {
       ]),
       const SizedBox(height: 12),
       LayoutBuilder(builder: (_, constraints) {
-        final cols = constraints.maxWidth > 1000
+        // IMPROVED: Consistent breakpoints
+        final cols = constraints.maxWidth > 1200
             ? 4
-            : constraints.maxWidth > 700
+            : constraints.maxWidth > 600
                 ? 3
-                : constraints.maxWidth > 460
+                : constraints.maxWidth > 400
                     ? 2
                     : 1;
         return GridView.builder(
@@ -2566,35 +2817,52 @@ Future<void> _showStudentDialog(BuildContext context, SchoolStore store,
   final isEditing = student != null;
   final name = TextEditingController(text: student?.name ?? '');
   final admission = TextEditingController(text: student?.admissionNo ?? '');
-  final grade = TextEditingController(text: student?.grade ?? '');
   final guardian = TextEditingController(text: student?.guardian ?? '');
   final phone = TextEditingController(text: student?.guardianPhone ?? '');
+  SchoolClass? selectedClass;
+  for (final schoolClass in store.classes) {
+    if (schoolClass.name == student?.grade) {
+      selectedClass = schoolClass;
+      break;
+    }
+  }
+  selectedClass ??= store.classes.isEmpty ? null : store.classes.first;
   await showDialog<void>(
       context: context,
-      builder: (_) => _FormDialog(
-          title: isEditing ? 'Edit student' : 'Add student',
-          fields: [
-            ('Student name', name),
-            ('Admission number', admission),
-            ('Grade', grade),
-            ('Parent / guardian', guardian),
-            ('Guardian phone', phone)
-          ],
-          submitLabel: isEditing ? 'Save student' : 'Add student',
-          onSubmit: () async {
-            final payload = {
-              'name': name.text,
-              'admissionNo': admission.text,
-              'grade': grade.text,
-              'guardian': guardian.text,
-              'guardianPhone': phone.text
-            };
-            if (isEditing) {
-              await store.addStudent(payload);
-            } else {
-              await store.addStudent(payload);
-            }
-          }));
+      builder: (_) => StatefulBuilder(
+          builder: (context, setState) => _FormDialog(
+              title: isEditing ? 'Edit student' : 'Add student',
+              fields: [
+                ('Student name', name),
+                ('Admission number', admission),
+                ('Parent / guardian', guardian),
+                ('Guardian phone', phone)
+              ],
+              extra: DropdownButtonFormField<SchoolClass>(
+                initialValue: selectedClass,
+                decoration: const InputDecoration(labelText: 'Class'),
+                items: [
+                  for (final schoolClass in store.classes)
+                    DropdownMenuItem(
+                      value: schoolClass,
+                      child: Text('${schoolClass.name} ${schoolClass.stream}'),
+                    ),
+                ],
+                onChanged: (value) => setState(() => selectedClass = value),
+              ),
+              submitLabel: isEditing ? 'Save student' : 'Add student',
+              onSubmit: () async {
+                if (selectedClass == null) {
+                  throw StateError('Select a class for this student.');
+                }
+                await store.addStudent({
+                  'name': name.text,
+                  'admissionNo': admission.text,
+                  'grade': selectedClass!.name,
+                  'guardian': guardian.text,
+                  'guardianPhone': phone.text
+                });
+              })));
 }
 
 Future<void> _showClassDialog(BuildContext context, SchoolStore store) async {
@@ -2621,6 +2889,39 @@ Future<void> _showClassDialog(BuildContext context, SchoolStore store) async {
               'feeTarget': int.tryParse(fee.text) ?? 0
             });
           }));
+}
+
+Future<void> _confirmDeleteClass(
+    BuildContext context, SchoolStore store, SchoolClass schoolClass) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('Delete class?'),
+      content: Text(
+          'Delete ${schoolClass.name} ${schoolClass.stream}? This cannot be undone. Students assigned to this class will remain in the system.'),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel')),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, true),
+          style: FilledButton.styleFrom(backgroundColor: Colors.red),
+          child: const Text('Delete class'),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true || !context.mounted) return;
+
+  try {
+    await store.deleteClass(schoolClass.id);
+  } catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not delete class: $error')),
+      );
+    }
+  }
 }
 
 Future<void> _showPaymentDialog(BuildContext context, SchoolStore store) async {

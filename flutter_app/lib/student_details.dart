@@ -39,62 +39,116 @@ class _StudentDetailsState extends State<StudentDetails>
       appBar: AppBar(
         backgroundColor: const Color(0xFFF7F8F9),
         elevation: 0,
-        title: Text(student.name,
-            style: const TextStyle(color: AppTheme.ink, fontSize: 16)),
+        title: const Text(""),
         iconTheme: const IconThemeData(color: AppTheme.ink),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-        child: Column(
-          children: [
-            _AvatarHeader(student: student),
-            const SizedBox(height: 6),
-            Text('@${student.admissionNo}',
-                style: const TextStyle(color: AppTheme.muted, fontSize: 12)),
-            const SizedBox(height: 18),
-            _ActionRow(
-              onEdit: () => _editStudent(context),
-              onMessage: () => _messageParent(context),
-              onDelete: () => _confirmDeleteStudent(context),
-            ),
-            const SizedBox(height: 22),
-            Container(
-              decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppTheme.line)),
-              child: TabBar(
-                controller: _tab,
-                indicator: BoxDecoration(
-                    color: AppTheme.peach.withValues(alpha: .14),
-                    borderRadius: BorderRadius.circular(14)),
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerColor: Colors.transparent,
-                labelColor: AppTheme.peach,
-                unselectedLabelColor: AppTheme.muted,
-                labelStyle:
-                    const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
-                tabs: const [
-                  Tab(text: 'Fee dashboard'),
-                  Tab(text: 'Payment history'),
-                ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Breakpoints — tune these to your app's needs.
+          final maxWidth = constraints.maxWidth;
+          final isTablet = maxWidth >= 600 && maxWidth < 1024;
+          final isDesktop = maxWidth >= 1024;
+
+          // Horizontal padding scales with screen size.
+          final horizontalPadding = isDesktop
+              ? maxWidth * 0.2 // wide gutters on desktop
+              : isTablet
+                  ? 40.0
+                  : 20.0;
+
+          // Cap content width so it doesn't stretch edge-to-edge on large screens.
+          final contentMaxWidth = isDesktop ? 720.0 : double.infinity;
+          double cardWidth;
+          if (isDesktop) {
+            cardWidth = (maxWidth * 0.6);
+          } else if (isTablet) {
+            cardWidth = (maxWidth * 0.8);
+          } else {
+            cardWidth = double.infinity;
+          }
+
+          return SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+                horizontalPadding, 8, horizontalPadding, 20),
+            child: Center(
+              child: Container(
+                padding: isDesktop || isTablet
+                    ? const EdgeInsets.all(50)
+                    : const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppTheme.line)),
+                width: cardWidth,
+                constraints: BoxConstraints(maxWidth: contentMaxWidth),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _AvatarHeader(student: student),
+                    const SizedBox(height: 6),
+                    Text(student.name,
+                        style: const TextStyle(
+                            color: AppTheme.ink,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 3),
+                    Text('@${student.admissionNo}',
+                        style: const TextStyle(
+                            color: AppTheme.muted, fontSize: 12)),
+                    const SizedBox(height: 18),
+                    _ActionRow(
+                      onEdit: () => _editStudent(context),
+                      onMessage: () => _messageParent(context),
+                      onDelete: () => _confirmDeleteStudent(context),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: 180,
+                      height: 30,
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppTheme.line)),
+                      child: TabBar(
+                        controller: _tab,
+                        indicator: BoxDecoration(
+                            color: AppTheme.peach.withValues(alpha: .14),
+                            borderRadius: BorderRadius.circular(9)),
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        dividerColor: Colors.transparent,
+                        labelColor: AppTheme.peach,
+                        unselectedLabelColor: AppTheme.muted,
+                        labelStyle: const TextStyle(
+                            fontWeight: FontWeight.w800, fontSize: 12),
+                        tabs: const [
+                          Tab(text: 'Fee'),
+                          Tab(text: 'History'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    // IndexedStack keeps both tabs alive so the TabBarView
+                    // doesn't need a fixed height hack inside a
+                    // SingleChildScrollView.
+                    AnimatedBuilder(
+                      animation: _tab,
+                      builder: (_, __) => _tab.index == 0
+                          ? _FeeDashboardTab(
+                              student: student, payments: payments)
+                          : _PaymentHistoryTab(
+                              student: student,
+                              payments: payments,
+                              store: widget.store,
+                            ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 18),
-            // IndexedStack keeps both tabs alive so the TabBarView doesn't need
-            // a fixed height hack inside a SingleChildScrollView.
-            AnimatedBuilder(
-              animation: _tab,
-              builder: (_, __) => _tab.index == 0
-                  ? _FeeDashboardTab(student: student, payments: payments)
-                  : _PaymentHistoryTab(
-                      student: student,
-                      payments: payments,
-                      store: widget.store,
-                    ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -129,8 +183,18 @@ class _StudentDetailsState extends State<StudentDetails>
       ),
     );
     if (confirmed == true) {
-      // TODO: await widget.store.deleteStudent(widget.student.id);
-      if (context.mounted) Navigator.pop(context);
+      try {
+        await widget.store.deleteStudent(widget.student.id);
+        if (context.mounted) {
+          Navigator.pop(context);
+        }
+      } catch (error) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not delete student: $error')),
+          );
+        }
+      }
     }
   }
 }
@@ -179,23 +243,18 @@ class _ActionRow extends StatelessWidget {
   final VoidCallback onMessage;
   final VoidCallback onDelete;
   @override
-  Widget build(BuildContext context) => Row(children: [
-        Expanded(
-            child: _ActionButton(
-                icon: Icons.edit_outlined, label: 'Edit', onTap: onEdit)),
+  Widget build(BuildContext context) =>
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        _ActionButton(icon: Icons.edit_outlined, label: 'Edit', onTap: onEdit),
         const SizedBox(width: 10),
-        Expanded(
-            child: _ActionButton(
-                icon: Icons.chat_outlined,
-                label: 'Message parent',
-                onTap: onMessage)),
+        _ActionButton(
+            icon: Icons.chat_outlined, label: 'Message', onTap: onMessage),
         const SizedBox(width: 10),
-        Expanded(
-            child: _ActionButton(
-                icon: Icons.delete_outline,
-                label: 'Delete',
-                destructive: true,
-                onTap: onDelete)),
+        _ActionButton(
+            icon: Icons.delete_outline,
+            label: 'Delete',
+            destructive: true,
+            onTap: onDelete),
       ]);
 }
 
@@ -212,24 +271,28 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = destructive ? Colors.red : AppTheme.ink;
-    return OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        foregroundColor: color,
-        side: BorderSide(
-            color:
-                destructive ? Colors.red.withValues(alpha: .3) : AppTheme.line),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 18),
-        const SizedBox(height: 4),
-        Text(label,
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
-            textAlign: TextAlign.center),
-      ]),
-    );
+    return Container(
+        width: 80,
+        height: 36,
+        child: OutlinedButton(
+          onPressed: onTap,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: color,
+            side: BorderSide(
+                color: destructive
+                    ? Colors.red.withValues(alpha: .3)
+                    : AppTheme.line),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(label,
+                style:
+                    const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                textAlign: TextAlign.center),
+          ]),
+        ));
   }
 }
 

@@ -44,6 +44,17 @@ export const paymentsTable = pgTable("school_payments", {
   paidAt: timestamp("paid_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const pendingPaymentsTable = pgTable("school_pending_payments", {
+  id: serial("id").primaryKey(),
+  transactionId: text("transaction_id").notNull().unique(),
+  amount: integer("amount").notNull(),
+  accountReference: text("account_reference").notNull(),
+  payerName: text("payer_name").notNull(),
+  candidateIds: text("candidate_ids").notNull().default("[]"),
+  status: text("status").notNull().default("Pending"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const activityTable = pgTable("school_activity", {
   id: serial("id").primaryKey(),
   actor: text("actor").notNull(),
@@ -100,6 +111,7 @@ export const insertMessageSchema = createInsertSchema(messagesTable).omit({
 export type Student = typeof studentsTable.$inferSelect;
 export type SchoolClass = typeof classesTable.$inferSelect;
 export type Payment = typeof paymentsTable.$inferSelect;
+export type PendingPayment = typeof pendingPaymentsTable.$inferSelect;
 export type Activity = typeof activityTable.$inferSelect;
 export type Notification = typeof notificationsTable.$inferSelect;
 export type Message = typeof messagesTable.$inferSelect;
