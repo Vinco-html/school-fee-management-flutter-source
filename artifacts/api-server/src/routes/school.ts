@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { asc, desc, eq, sql } from "drizzle-orm";
 import {
   activityTable,
+  eventsTable,
   classesTable,
   db,
   messagesTable,
@@ -113,6 +114,14 @@ function notificationDto(item: typeof notificationsTable.$inferSelect) {
 
 function messageDto(item: typeof messagesTable.$inferSelect) {
   return { ...item, sentAt: isoDate(item.sentAt) };
+}
+
+function eventDto(item: typeof eventsTable.$inferSelect) {
+  return {
+    ...item,
+    eventDate: isoDate(item.eventDate),
+    createdAt: isoDate(item.createdAt),
+  };
 }
 
 function pendingPaymentDto(item: typeof pendingPaymentsTable.$inferSelect) {
@@ -450,6 +459,34 @@ router.get("/school/messages", async (_req, res) => {
   await seedSchoolData();
   const messages = await db.select().from(messagesTable).orderBy(desc(messagesTable.id));
   return res.json(messages.map(messageDto));
+});
+
+router.get("/school/events", async (_req, res) => {
+  await seedSchoolData();
+  const events = await db.select().from(eventsTable)
+    .orderBy(asc(eventsTable.eventDate));
+  return res.json(events.map(eventDto));
+});
+
+router.post("/school/events", async (req, res) => {
+  await seedSchoolData();
+  const body = req.body as {
+    title?: string;
+    description?: string;
+    eventDate?: string;
+    createdBy?: string;
+  };
+  const eventDate = body.eventDate ? new Date(body.eventDate) : null;
+  if (!body.title?.trim() || !eventDate || Number.isNaN(eventDate.getTime())) {
+    return res.status(400).json({ error: "title and a valid eventDate are required" });
+  }
+  const [event] = await db.insert(eventsTable).values({
+    title: body.title.trim(),
+    description: body.description?.trim() ?? "",
+    eventDate,
+    createdBy: body.createdBy?.trim() || "Accountant",
+  }).returning();
+  return res.status(201).json(eventDto(event));
 });
 
 router.post("/school/messages", async (req, res) => {

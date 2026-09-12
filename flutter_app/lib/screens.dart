@@ -514,43 +514,59 @@ class _RolePicker extends StatelessWidget {
   final SchoolStore store;
   final ValueChanged<UserRole> onSelectRole;
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-        decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppTheme.line)),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          CircleAvatar(
-              radius: 15,
-              backgroundColor: store.isAccountant
-                  ? AppTheme.blue.withValues(alpha: .16)
-                  : AppTheme.peach.withValues(alpha: .24),
-              child: Icon(
-                  store.isAccountant
-                      ? Icons.calculate_outlined
-                      : Icons.admin_panel_settings_outlined,
-                  color: store.isAccountant ? AppTheme.blue : AppTheme.peach,
-                  size: 17)),
-          const SizedBox(width: 8),
-          Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(store.isAccountant ? 'Accountant' : 'Jane Mwangi',
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        color: AppTheme.ink,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700)),
-                const Text('Sr. School admin',
-                    style: TextStyle(color: AppTheme.muted, fontSize: 10)),
-              ]),
+  Widget build(BuildContext context) {
+    final identity = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.line)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        CircleAvatar(
+            radius: 15,
+            backgroundColor: store.isAccountant
+                ? AppTheme.blue.withValues(alpha: .16)
+                : AppTheme.peach.withValues(alpha: .24),
+            child: Icon(
+                store.isAccountant
+                    ? Icons.calculate_outlined
+                    : Icons.admin_panel_settings_outlined,
+                color: store.isAccountant ? AppTheme.blue : AppTheme.peach,
+                size: 17)),
+        const SizedBox(width: 8),
+        Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(store.isAccountant ? 'Accountant' : 'School admin',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      color: AppTheme.ink,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700)),
+              Text(store.isAccountant ? 'Accountant access' : 'Admin access',
+                  style: const TextStyle(color: AppTheme.muted, fontSize: 10)),
+            ]),
+        if (store.canPreviewRoles) ...[
           const SizedBox(width: 4),
           const Icon(Icons.keyboard_arrow_down,
               size: 17, color: AppTheme.muted),
-        ]),
-      );
+        ],
+      ]),
+    );
+
+    if (!store.canPreviewRoles) return identity;
+    return PopupMenuButton<UserRole>(
+      initialValue: store.role,
+      onSelected: onSelectRole,
+      itemBuilder: (_) => const [
+        PopupMenuItem(value: UserRole.admin, child: Text('Admin view')),
+        PopupMenuItem(
+            value: UserRole.accountant, child: Text('Preview as Accountant')),
+      ],
+      child: identity,
+    );
+  }
 }
 
 class _SideMenu extends StatelessWidget {
@@ -737,7 +753,7 @@ class DashboardPage extends StatelessWidget {
             _ActivityTableCard(items: summary.recentActivity),
           ]);
           final right = Column(children: [
-            _ScheduleCard(items: summary.recentActivity),
+            _ScheduleCard(store: store),
             SizedBox(height: spacing),
             _UpcomingCard(store: store),
             SizedBox(height: spacing),
@@ -1235,8 +1251,8 @@ class _ActivityTableSkeleton extends StatelessWidget {
 /// "Course Schedule" style right-rail list  remapped to a quick follow-up
 /// queue built from recent activity.
 class _ScheduleCard extends StatelessWidget {
-  const _ScheduleCard({required this.items});
-  final List<Activity> items;
+  const _ScheduleCard({required this.store});
+  final SchoolStore store;
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
@@ -1251,13 +1267,27 @@ class _ScheduleCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Follow-up schedule',
-                style: TextStyle(
-                    color: AppTheme.ink,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800)),
+            Row(children: [
+              const Expanded(
+                  child: Text('Term schedule',
+                      style: TextStyle(
+                          color: AppTheme.ink,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800))),
+              TextButton(
+                  onPressed: () async {
+                    await store.loadEvents();
+                    if (context.mounted) {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => CalendarPage(store: store)));
+                    }
+                  },
+                  child: const Text('More')),
+            ]),
             const SizedBox(height: 3),
-            const Text("Here's your activity for the week",
+            const Text("Tap a date to see planned events",
                 style: TextStyle(color: AppTheme.muted, fontSize: 11)),
             const SizedBox(height: 14),
             SizedBox(
@@ -1267,69 +1297,163 @@ class _ScheduleCard extends StatelessWidget {
                 itemCount: days.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                 itemBuilder: (_, i) {
-                  final selected = i == 1;
-                  return Container(
-                    width: 54,
-                    decoration: BoxDecoration(
-                        color:
-                            selected ? AppTheme.peach : const Color(0xFFF5F6F6),
-                        borderRadius: BorderRadius.circular(14)),
-                    alignment: Alignment.center,
-                    child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('${days[i].day}',
-                              style: TextStyle(
-                                  color: selected ? Colors.white : AppTheme.ink,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 15)),
-                          Text(DateFormat('MMM').format(days[i]),
-                              style: TextStyle(
-                                  color: selected
-                                      ? Colors.white70
-                                      : AppTheme.muted,
-                                  fontSize: 10)),
-                        ]),
-                  );
+                  final date =
+                      DateTime(days[i].year, days[i].month, days[i].day);
+                  final dayEvents = store.events.where((event) {
+                    final value = event.eventDate.toLocal();
+                    return DateTime(value.year, value.month, value.day) == date;
+                  }).toList();
+                  return InkWell(
+                      onTap: () => _showDayEvents(context, date, dayEvents),
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        width: 54,
+                        decoration: BoxDecoration(
+                            color: const Color(0xFFF5F6F6),
+                            borderRadius: BorderRadius.circular(14)),
+                        alignment: Alignment.center,
+                        child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('${days[i].day}',
+                                  style: const TextStyle(
+                                      color: AppTheme.ink,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 15)),
+                              Text(DateFormat('MMM').format(days[i]),
+                                  style: const TextStyle(
+                                      color: AppTheme.muted, fontSize: 10)),
+                              if (dayEvents.isNotEmpty)
+                                Container(
+                                    margin: const EdgeInsets.only(top: 3),
+                                    width: 5,
+                                    height: 5,
+                                    decoration: const BoxDecoration(
+                                        color: AppTheme.peach,
+                                        shape: BoxShape.circle)),
+                            ]),
+                      ));
                 },
               ),
             ),
             const SizedBox(height: 16),
-            for (final item in items.take(3))
+            for (final event in store.events.take(3))
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Row(children: [
                   CircleAvatar(
                       radius: 17,
-                      backgroundColor:
-                          _roleColor(item.role).withValues(alpha: .13),
-                      child: Icon(_roleIcon(item.role),
-                          color: _roleColor(item.role), size: 16)),
+                      backgroundColor: AppTheme.peach.withValues(alpha: .13),
+                      child: const Icon(Icons.event_outlined,
+                          color: AppTheme.peach, size: 16)),
                   const SizedBox(width: 10),
                   Expanded(
                       child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                        Text(item.actor,
+                        Text(event.title,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                                 color: AppTheme.ink,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700)),
-                        Text(item.action,
+                        Text(
+                            DateFormat('d MMM, h:mm a')
+                                .format(event.eventDate.toLocal()),
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                                 color: AppTheme.muted, fontSize: 11)),
                       ])),
-                  _RoundIcon(icon: Icons.schedule_outlined, onTap: () {}),
+                  if (store.isAccountant)
+                    _RoundIcon(
+                        icon: Icons.add,
+                        onTap: () => _showEventDialog(context, store)),
                   const SizedBox(width: 6),
                   _RoundIcon(icon: Icons.videocam_outlined, onTap: () {}),
                 ]),
               ),
           ]),
     );
+  }
+
+  void _showDayEvents(
+      BuildContext context, DateTime date, List<CalendarEvent> events) {
+    showModalBottomSheet<void>(
+        context: context,
+        builder: (_) => Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(DateFormat('EEEE, d MMMM').format(date),
+                  style: const TextStyle(
+                      color: AppTheme.ink,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800)),
+              const SizedBox(height: 12),
+              if (events.isEmpty)
+                const Text('No events planned for this day.',
+                    style: TextStyle(color: AppTheme.muted)),
+              for (final event in events)
+                ListTile(
+                    leading:
+                        const Icon(Icons.event_outlined, color: AppTheme.peach),
+                    title: Text(event.title),
+                    subtitle: Text(event.description.isEmpty
+                        ? DateFormat('h:mm a').format(event.eventDate.toLocal())
+                        : event.description)),
+              if (store.isAccountant)
+                FilledButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showEventDialog(context, store, date);
+                    },
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add event')),
+            ])));
+  }
+}
+
+class CalendarPage extends StatelessWidget {
+  const CalendarPage({super.key, required this.store});
+  final SchoolStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    final grouped = <String, List<CalendarEvent>>{};
+    for (final event in store.events) {
+      final day = DateFormat('yyyy-MM-dd').format(event.eventDate.toLocal());
+      grouped.putIfAbsent(day, () => []).add(event);
+    }
+    return Scaffold(
+        appBar: AppBar(title: const Text('Term calendar')),
+        body: _PageScroll(children: [
+          _SectionHeader(
+              title: 'Planned term events',
+              subtitle: '${store.events.length} event(s) scheduled'),
+          const SizedBox(height: 18),
+          for (final entry in grouped.entries)
+            Card(
+                child: Column(children: [
+              ListTile(
+                  title: Text(DateFormat('EEEE, d MMMM')
+                      .format(DateTime.parse(entry.key))),
+                  leading: const Icon(Icons.calendar_today_outlined)),
+              for (final event in entry.value)
+                ListTile(
+                    title: Text(event.title),
+                    subtitle: Text(event.description),
+                    trailing: Text(DateFormat('h:mm a')
+                        .format(event.eventDate.toLocal()))),
+            ])),
+          if (store.isAccountant)
+            Align(
+                alignment: Alignment.centerRight,
+                child: FloatingActionButton.extended(
+                    onPressed: () => _showEventDialog(context, store),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add event'))),
+        ]));
   }
 }
 
@@ -2315,8 +2439,16 @@ class PaymentsPage extends StatelessWidget {
 // Notifications  improved with consistent breakpoints
 // ---------------------------------------------------------------------------
 
-class NotificationsPage extends StatelessWidget {
+class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
+
+  @override
+  State<NotificationsPage> createState() => _NotificationsPageState();
+}
+
+class _NotificationsPageState extends State<NotificationsPage> {
+  int _selectedTab = 0;
+
   @override
   Widget build(BuildContext context) {
     final store = _store(context);
@@ -2326,18 +2458,92 @@ class NotificationsPage extends StatelessWidget {
         for (var i = 0; i < 2; i++) const _NotificationGroupSkeleton()
       ]);
     }
-    final groups = <String, List<SchoolNotification>>{};
-    for (final item in store.notifications) {
-      groups.putIfAbsent(_typeGroupLabel(item.type), () => []).add(item);
-    }
+    final tabs = _notificationTabs(store.notifications);
+    final selectedItems = _selectedTab == 0
+        ? store.notifications
+        : _selectedTab == 1
+            ? store.notifications.where((item) => !item.read).toList()
+            : store.notifications
+                .where(
+                    (item) => _typeGroupLabel(item.type) == tabs[_selectedTab])
+                .toList();
     return _PageScroll(children: [
-      for (final entry in groups.entries) ...[
+      Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppTheme.line)),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (var index = 0; index < tabs.length; index++)
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: ChoiceChip(
+                    label: Text(tabs[index]),
+                    selected: _selectedTab == index,
+                    onSelected: (_) => setState(() => _selectedTab = index),
+                    selectedColor: AppTheme.peach.withValues(alpha: .16),
+                    labelStyle: TextStyle(
+                        color: _selectedTab == index
+                            ? AppTheme.peach
+                            : AppTheme.muted,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12),
+                    side: BorderSide.none,
+                    showCheckmark: false,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+      const SizedBox(height: 18),
+      if (selectedItems.isEmpty)
+        const _EmptyNotifications()
+      else
         _NotificationGroup(
-            title: entry.key, items: entry.value, onMarkRead: store.markRead),
-        const SizedBox(height: 22),
-      ],
+            title: _selectedTab == 0 ? 'All notifications' : tabs[_selectedTab],
+            items: selectedItems,
+            onMarkRead: store.markRead),
     ]);
   }
+
+  List<String> _notificationTabs(List<SchoolNotification> notifications) {
+    final types = <String>[];
+    for (final item in notifications) {
+      final label = _typeGroupLabel(item.type);
+      if (!types.contains(label)) types.add(label);
+    }
+    final tabs = ['All', 'Unread', ...types];
+    if (_selectedTab >= tabs.length) _selectedTab = 0;
+    return tabs;
+  }
+}
+
+class _EmptyNotifications extends StatelessWidget {
+  const _EmptyNotifications();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(36),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.line)),
+        child: const Column(
+          children: [
+            Icon(Icons.notifications_none_outlined,
+                color: AppTheme.muted, size: 34),
+            SizedBox(height: 10),
+            Text('No notifications in this tab.',
+                style: TextStyle(color: AppTheme.muted, fontSize: 12)),
+          ],
+        ),
+      );
 }
 
 class _NotificationGroup extends StatelessWidget {
@@ -2880,6 +3086,64 @@ Future<void> _showClassDialog(BuildContext context, SchoolStore store) async {
               'feeTarget': int.tryParse(fee.text) ?? 0
             });
           }));
+}
+
+Future<void> _showEventDialog(BuildContext context, SchoolStore store,
+    [DateTime? initialDate]) async {
+  final title = TextEditingController();
+  final description = TextEditingController();
+  DateTime selectedDate = initialDate ?? DateTime.now();
+  TimeOfDay selectedTime = TimeOfDay.now();
+  await showDialog<void>(
+      context: context,
+      builder: (_) => StatefulBuilder(
+          builder: (context, setState) => _FormDialog(
+              title: 'Add calendar event',
+              fields: [
+                ('Event title', title),
+                ('Description', description),
+              ],
+              extra: Column(children: [
+                ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.calendar_today_outlined),
+                    title: Text(
+                        DateFormat('EEEE, d MMMM yyyy').format(selectedDate)),
+                    onTap: () async {
+                      final value = await showDatePicker(
+                          context: context,
+                          firstDate: DateTime.now()
+                              .subtract(const Duration(days: 365)),
+                          lastDate:
+                              DateTime.now().add(const Duration(days: 730)),
+                          initialDate: selectedDate);
+                      if (value != null) setState(() => selectedDate = value);
+                    }),
+                ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.schedule_outlined),
+                    title: Text(selectedTime.format(context)),
+                    onTap: () async {
+                      final value = await showTimePicker(
+                          context: context, initialTime: selectedTime);
+                      if (value != null) setState(() => selectedTime = value);
+                    }),
+              ]),
+              submitLabel: 'Save event',
+              onSubmit: () async {
+                final eventDate = DateTime(
+                    selectedDate.year,
+                    selectedDate.month,
+                    selectedDate.day,
+                    selectedTime.hour,
+                    selectedTime.minute);
+                await store.addEvent({
+                  'title': title.text,
+                  'description': description.text,
+                  'eventDate': eventDate.toUtc().toIso8601String(),
+                  'createdBy': 'Accountant',
+                });
+              })));
 }
 
 Future<void> _confirmDeleteClass(

@@ -50,7 +50,7 @@ class _SchoolFeeAppState extends State<SchoolFeeApp> {
                 onAuthenticated: (user) {
                   widget.api.setToken(user.$1);
                   final nextStore = SchoolStore(widget.api);
-                  nextStore.setRole(user.$2.role == 'admin'
+                  nextStore.setAuthenticatedRole(user.$2.role == 'admin'
                       ? UserRole.admin
                       : UserRole.accountant);
                   setState(() {

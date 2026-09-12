@@ -92,6 +92,15 @@ export const messagesTable = pgTable("school_messages", {
   sentAt: timestamp("sent_at", { withTimezone: true }),
 });
 
+export const eventsTable = pgTable("school_events", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull().default(""),
+  eventDate: timestamp("event_date", { withTimezone: true }).notNull(),
+  createdBy: text("created_by").notNull().default("Accountant"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const insertStudentSchema = createInsertSchema(studentsTable).omit({
   id: true,
   createdAt: true,
@@ -125,3 +134,4 @@ export type PendingPayment = typeof pendingPaymentsTable.$inferSelect;
 export type Activity = typeof activityTable.$inferSelect;
 export type Notification = typeof notificationsTable.$inferSelect;
 export type Message = typeof messagesTable.$inferSelect;
+export type CalendarEvent = typeof eventsTable.$inferSelect;

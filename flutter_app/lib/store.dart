@@ -17,6 +17,7 @@ class SchoolStore extends ChangeNotifier {
   Timer? _retryTimer;
 
   UserRole role = UserRole.admin;
+  UserRole? authenticatedRole;
   bool loading = true;
   // True once we've had at least one real (non-error) response from the API.
   bool hasLoadedOnce = false;
@@ -29,8 +30,10 @@ class SchoolStore extends ChangeNotifier {
   List<Activity> activities = [];
   List<SchoolNotification> notifications = [];
   List<Campaign> campaigns = [];
+  List<CalendarEvent> events = [];
 
   bool get isAccountant => role == UserRole.accountant;
+  bool get canPreviewRoles => authenticatedRole == UserRole.admin;
   int get unreadCount => notifications.where((item) => !item.read).length;
   // The UI should show skeleton placeholders instead of empty states
   // whenever we don't yet have real data to show.
@@ -89,6 +92,13 @@ class SchoolStore extends ChangeNotifier {
   }
 
   void setRole(UserRole next) {
+    if (!canPreviewRoles && next != authenticatedRole) return;
+    role = next;
+    notifyListeners();
+  }
+
+  void setAuthenticatedRole(UserRole next) {
+    authenticatedRole = next;
     role = next;
     notifyListeners();
   }
@@ -141,5 +151,15 @@ class SchoolStore extends ChangeNotifier {
   Future<void> createCampaign(Map<String, dynamic> body) async {
     await api.createMessage(body);
     await load();
+  }
+
+  Future<void> addEvent(Map<String, dynamic> body) async {
+    await api.addEvent(body);
+    await loadEvents();
+  }
+
+  Future<void> loadEvents() async {
+    events = await api.events();
+    notifyListeners();
   }
 }

@@ -178,6 +178,18 @@ class ApiClient {
       Campaign.fromJson(
           await _request('/school/messages', method: 'POST', body: body)
               as Map<String, dynamic>);
+
+  Future<List<CalendarEvent>> events() async {
+    final data = await _request('/school/events') as List<dynamic>;
+    return data
+        .map((item) => CalendarEvent.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<CalendarEvent> addEvent(Map<String, dynamic> body) async =>
+      CalendarEvent.fromJson(
+          await _request('/school/events', method: 'POST', body: body)
+              as Map<String, dynamic>);
 }
 
 class ApiException implements Exception {

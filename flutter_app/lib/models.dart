@@ -244,6 +244,31 @@ class Campaign {
       );
 }
 
+class CalendarEvent {
+  const CalendarEvent({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.eventDate,
+    required this.createdBy,
+  });
+
+  final int id;
+  final String title;
+  final String description;
+  final DateTime eventDate;
+  final String createdBy;
+
+  factory CalendarEvent.fromJson(Map<String, dynamic> json) => CalendarEvent(
+        id: _toInt(json['id']),
+        title: json['title']?.toString() ?? '',
+        description: json['description']?.toString() ?? '',
+        eventDate: DateTime.tryParse(json['eventDate']?.toString() ?? '') ??
+            DateTime.now(),
+        createdBy: json['createdBy']?.toString() ?? '',
+      );
+}
+
 class DashboardSummary {
   const DashboardSummary({
     required this.students,
