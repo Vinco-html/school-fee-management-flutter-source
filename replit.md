@@ -10,6 +10,7 @@ Role-aware school finance workspace for admins and accountants, with a Flutter m
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required env: `DATABASE_URL` — Postgres connection string
+- Optional env: `DEMO_SEED=true` — loads demo records; keep it unset or `false` for real school data.
 
 ## Stack
 

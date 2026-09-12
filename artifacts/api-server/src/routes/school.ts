@@ -19,6 +19,7 @@ function isoDate(value: Date | null | undefined) {
 }
 
 async function seedSchoolData() {
+  if (process.env.DEMO_SEED !== "true") return;
   if (seedPromise) return seedPromise;
   seedPromise = (async () => {
     const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(studentsTable);
