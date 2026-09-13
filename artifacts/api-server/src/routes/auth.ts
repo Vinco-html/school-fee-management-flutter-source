@@ -1,10 +1,19 @@
 import { createHash, randomBytes } from "node:crypto";
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type NextFunction, type Request, type Response } from "express";
 import { eq } from "drizzle-orm";
-import { db, usersTable } from "@workspace/db";
+import { db, deviceTokensTable, usersTable } from "@workspace/db";
 
 const router: IRouter = Router();
 const sessions = new Map<string, { userId: number; role: "admin" | "accountant" }>();
+
+export function requireAuth(req: Request, res: Response, next: NextFunction) {
+  const header = req.header("authorization") ?? "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+  const session = sessions.get(token);
+  if (!session) return res.status(401).json({ error: "Authentication required" });
+  res.locals.auth = session;
+  return next();
+}
 
 function hashPassword(password: string) {
   return createHash("sha256").update(password).digest("hex");
@@ -63,6 +72,27 @@ router.post("/auth/login", async (req, res) => {
   const token = randomBytes(32).toString("hex");
   sessions.set(token, { userId: user.id, role: user.role as "admin" | "accountant" });
   return res.json({ token, user: publicUser(user) });
+});
+
+router.post("/auth/device-tokens", requireAuth, async (req, res) => {
+  const token = String(req.body.token ?? "").trim();
+  const platform = String(req.body.platform ?? "android").trim().toLowerCase();
+  if (!token) return res.status(400).json({ error: "token is required" });
+
+  await db.insert(deviceTokensTable).values({
+    userId: res.locals.auth.userId,
+    token,
+    platform,
+    updatedAt: new Date(),
+  }).onConflictDoUpdate({
+    target: deviceTokensTable.token,
+    set: {
+      userId: res.locals.auth.userId,
+      platform,
+      updatedAt: new Date(),
+    },
+  });
+  return res.status(204).send();
 });
 
 export default router;

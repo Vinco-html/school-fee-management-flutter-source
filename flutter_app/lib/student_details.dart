@@ -271,7 +271,7 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = destructive ? Colors.red : AppTheme.ink;
-    return Container(
+    return SizedBox(
         width: 80,
         height: 36,
         child: OutlinedButton(

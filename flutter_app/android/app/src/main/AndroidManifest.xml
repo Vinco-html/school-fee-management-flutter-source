@@ -1,8 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
         android:label="Petunia"
         android:name="${applicationName}"
         android:icon="@mipmap/petunia_logo_transparent">
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="school-fee-alerts" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/petunia_logo_transparent" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

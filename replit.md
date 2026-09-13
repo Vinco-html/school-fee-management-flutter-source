@@ -10,6 +10,7 @@ Role-aware school finance workspace for admins and accountants, with a Flutter m
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required env: `DATABASE_URL` — Postgres connection string
+- Required for external push delivery: `FIREBASE_SERVICE_ACCOUNT_JSON` — the Firebase Admin SDK service-account JSON stored as a secret
 - Optional env: `DEMO_SEED=true` — loads demo records; keep it unset or `false` for real school data.
 
 ## Stack
@@ -25,7 +26,7 @@ Role-aware school finance workspace for admins and accountants, with a Flutter m
 
 - `flutter_app/` — Flutter/Dart client for mobile and desktop
 - `artifacts/api-server/src/routes/school.ts` — school finance API and demo seed flow
-- `lib/db/src/schema/school.ts` — PostgreSQL schema for students, classes, payments, activity, notifications, and campaigns
+- `lib/db/src/schema/school.ts` — PostgreSQL schema for students, classes, payments, activity, notifications, device tokens, and campaigns
 - `outputs/school-fee-management-flutter-source.zip` — packaged Flutter client plus backend source
 
 ## Architecture decisions

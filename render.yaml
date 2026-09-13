@@ -17,6 +17,8 @@ services:
         sync: false
       - key: DEMO_SEED
         value: "false"
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
 
 databases:
   - name: school-fee-db

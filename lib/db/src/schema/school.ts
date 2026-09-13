@@ -17,6 +17,15 @@ export const usersTable = pgTable("school_users", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const deviceTokensTable = pgTable("school_device_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  token: text("token").notNull().unique(),
+  platform: text("platform").notNull().default("android"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const studentsTable = pgTable("school_students", {
   id: serial("id").primaryKey(),
   admissionNo: text("admission_no").notNull().unique(),
@@ -128,6 +137,7 @@ export const insertMessageSchema = createInsertSchema(messagesTable).omit({
 
 export type Student = typeof studentsTable.$inferSelect;
 export type User = typeof usersTable.$inferSelect;
+export type DeviceToken = typeof deviceTokensTable.$inferSelect;
 export type SchoolClass = typeof classesTable.$inferSelect;
 export type Payment = typeof paymentsTable.$inferSelect;
 export type PendingPayment = typeof pendingPaymentsTable.$inferSelect;

@@ -11,6 +11,7 @@ import {
   paymentsTable,
   studentsTable,
 } from "@workspace/db";
+import { sendPushNotification } from "../push";
 
 const router: IRouter = Router();
 let seedPromise: Promise<void> | undefined;
@@ -112,6 +113,13 @@ function notificationDto(item: typeof notificationsTable.$inferSelect) {
   return { ...item, createdAt: isoDate(item.createdAt) };
 }
 
+async function createNotification(title: string, body: string, type: string) {
+  await db.insert(notificationsTable).values({ title, body, type });
+  void sendPushNotification(title, body, { type }).catch((error) => {
+    console.error("Push notification delivery failed", error);
+  });
+}
+
 function messageDto(item: typeof messagesTable.$inferSelect) {
   return { ...item, sentAt: isoDate(item.sentAt) };
 }
@@ -156,11 +164,11 @@ async function recordPayment(student: typeof studentsTable.$inferSelect,
     action: "Recorded payment",
     detail: `KES ${amount.toLocaleString()} for ${student.name} (${transactionId})`,
   });
-  await db.insert(notificationsTable).values({
-    title: "Payment received",
-    body: `KES ${amount.toLocaleString()} was applied to ${student.name}.`,
-    type: "payment",
-  });
+  await createNotification(
+    "Payment received",
+    `KES ${amount.toLocaleString()} was applied to ${student.name}.`,
+    "payment",
+  );
   return payment;
 }
 
@@ -219,11 +227,11 @@ router.post("/school/students", async (req, res) => {
     action: "Added a student",
     detail: `${student.name} to ${student.grade}`,
   });
-  await db.insert(notificationsTable).values({
-    title: "New student added",
-    body: `${student.name} was added to ${student.grade}.`,
-    type: "student",
-  });
+  await createNotification(
+    "New student added",
+    `${student.name} was added to ${student.grade}.`,
+    "student",
+  );
   return res.status(201).json(studentDto(student));
 });
 
@@ -407,22 +415,22 @@ router.post("/school/payments/manual", async (req, res) => {
       payerName: payerName || accountReference,
       candidateIds: JSON.stringify(candidates.map((student) => student.id)),
     }).returning();
-    await db.insert(notificationsTable).values({
-      title: "Payment needs confirmation",
-      body: `KES ${amount.toLocaleString()} from ${payerName || accountReference} needs a student match.`,
-      type: "payment",
-    });
+    await createNotification(
+      "Payment needs confirmation",
+      `KES ${amount.toLocaleString()} from ${payerName || accountReference} needs a student match.`,
+      "payment",
+    );
     return res.status(202).json({
       status: "PendingConfirmation",
       pending: pendingPaymentDto(pending),
       candidates: candidates.map(studentDto),
     });
   });
-  await db.insert(notificationsTable).values({
-    title: "Payment recorded",
-    body: `A KES ${Number(body.amount).toLocaleString()} payment for ${body.studentName} was recorded.`,
-    type: "payment",
-  });
+  await createNotification(
+    "Payment recorded",
+    `A KES ${Number(body.amount).toLocaleString()} payment for ${body.studentName} was recorded.`,
+    "payment",
+  );
   return res.status(201).json(paymentDto(payment));
 });
 

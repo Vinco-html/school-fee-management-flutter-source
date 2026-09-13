@@ -1,14 +1,22 @@
+import 'dart:async';
+
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'api_client.dart';
+import 'firebase_options.dart';
 import 'models.dart';
+import 'push_notifications.dart';
 import 'screens.dart';
 import 'store.dart';
 import 'theme.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized(); // add this line first
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -53,6 +61,7 @@ class _SchoolFeeAppState extends State<SchoolFeeApp> {
                   nextStore.setAuthenticatedRole(user.$2.role == 'admin'
                       ? UserRole.admin
                       : UserRole.accountant);
+                  unawaited(PushNotificationService.initialize(widget.api));
                   setState(() {
                     store = nextStore;
                   });

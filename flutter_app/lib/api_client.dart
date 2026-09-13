@@ -28,6 +28,7 @@ class ApiClient {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
     };
+    if (token != null) headers['authorization'] = 'Bearer ${token!}';
     final response = switch (method) {
       'POST' =>
         await http.post(uri, headers: headers, body: jsonEncode(body ?? {})),
@@ -165,6 +166,17 @@ class ApiClient {
 
   Future<void> markNotificationsRead() async {
     await _request('/school/notifications/read-all', method: 'POST');
+  }
+
+  Future<void> registerDeviceToken({
+    required String deviceToken,
+    required String platform,
+  }) async {
+    await _request(
+      '/auth/device-tokens',
+      method: 'POST',
+      body: {'token': deviceToken, 'platform': platform},
+    );
   }
 
   Future<List<Campaign>> messages() async {

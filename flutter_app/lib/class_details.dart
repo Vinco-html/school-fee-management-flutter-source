@@ -86,7 +86,9 @@ class _ClassDetailsState extends State<ClassDetails>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    _ClassHeader(schoolClass: schoolClass),
+                    _ClassHeader(
+                        schoolClass: schoolClass,
+                        paidPercentage: paidPercentage),
                     const SizedBox(height: 18),
                     _ActionRow(
                       onEdit: () => _showUnavailableMessage(
@@ -159,36 +161,72 @@ class _ClassDetailsState extends State<ClassDetails>
 }
 
 class _ClassHeader extends StatelessWidget {
-  const _ClassHeader({required this.schoolClass});
+  const _ClassHeader({required this.schoolClass, required this.paidPercentage});
   final SchoolClass schoolClass;
+  final double paidPercentage;
 
   @override
-  Widget build(BuildContext context) => Column(
-        children: [
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color:
+              const Color.fromARGB(255, 180, 176, 175).withValues(alpha: .14),
+          borderRadius: BorderRadius.circular(28),
+        ),
+        child: Row(children: [
           Container(
-            width: 92,
-            height: 92,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
               color: AppTheme.peach.withValues(alpha: .14),
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(50),
             ),
             child: const Icon(Icons.school_outlined,
                 color: AppTheme.peach, size: 46),
           ),
-          const SizedBox(height: 12),
-          Text(
-            '${schoolClass.name} ${schoolClass.stream}',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppTheme.ink,
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${schoolClass.name} ${schoolClass.stream}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppTheme.ink,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text('@${schoolClass.stream.toLowerCase()}',
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        const TextStyle(color: AppTheme.muted, fontSize: 12)),
+                const SizedBox(height: 20),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: paidPercentage,
+                    minHeight: 10,
+                    backgroundColor: const Color(0xFFF0F2F1),
+                    color: AppTheme.green,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '${(paidPercentage * 100).round()}% of expected fees collected',
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: AppTheme.muted, fontSize: 11),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 3),
-          Text('@${schoolClass.stream.toLowerCase()}',
-              style: const TextStyle(color: AppTheme.muted, fontSize: 12)),
-        ],
+        ]),
       );
 }
 
@@ -291,8 +329,11 @@ class _FeeDashboardTab extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                        child: _MiniStat(
-                            label: 'Paid so far', value: _money.format(paid))),
+                      child: _MiniStat(
+                        label: 'Paid so far',
+                        value: _money.format(paid),
+                      ),
+                    ),
                     Expanded(
                       child: _MiniStat(
                         label: 'Balance',
@@ -301,8 +342,17 @@ class _FeeDashboardTab extends StatelessWidget {
                       ),
                     ),
                     Expanded(
-                        child: _MiniStat(
-                            label: 'Students', value: '${students.length}')),
+                      child: _MiniStat(
+                        label: 'Expected',
+                        value: _money.format(schoolClass.feeTarget),
+                      ),
+                    ),
+                    Expanded(
+                      child: _MiniStat(
+                        label: 'Students',
+                        value: '${students.length}',
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 14),

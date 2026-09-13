@@ -514,59 +514,52 @@ class _RolePicker extends StatelessWidget {
   final SchoolStore store;
   final ValueChanged<UserRole> onSelectRole;
   @override
-  Widget build(BuildContext context) {
-    final identity = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-      decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppTheme.line)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        CircleAvatar(
-            radius: 15,
-            backgroundColor: store.isAccountant
-                ? AppTheme.blue.withValues(alpha: .16)
-                : AppTheme.peach.withValues(alpha: .24),
-            child: Icon(
-                store.isAccountant
-                    ? Icons.calculate_outlined
-                    : Icons.admin_panel_settings_outlined,
-                color: store.isAccountant ? AppTheme.blue : AppTheme.peach,
-                size: 17)),
-        const SizedBox(width: 8),
-        Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(store.isAccountant ? 'Accountant' : 'School admin',
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      color: AppTheme.ink,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700)),
-              Text(store.isAccountant ? 'Accountant access' : 'Admin access',
-                  style: const TextStyle(color: AppTheme.muted, fontSize: 10)),
-            ]),
-        if (store.canPreviewRoles) ...[
-          const SizedBox(width: 4),
-          const Icon(Icons.keyboard_arrow_down,
-              size: 17, color: AppTheme.muted),
+  Widget build(BuildContext context) => PopupMenuButton<UserRole>(
+        initialValue: store.role,
+        onSelected: onSelectRole,
+        itemBuilder: (_) => const [
+          PopupMenuItem(value: UserRole.admin, child: Text('Preview as Admin')),
+          PopupMenuItem(
+              value: UserRole.accountant, child: Text('Preview as Accountant')),
         ],
-      ]),
-    );
-
-    if (!store.canPreviewRoles) return identity;
-    return PopupMenuButton<UserRole>(
-      initialValue: store.role,
-      onSelected: onSelectRole,
-      itemBuilder: (_) => const [
-        PopupMenuItem(value: UserRole.admin, child: Text('Admin view')),
-        PopupMenuItem(
-            value: UserRole.accountant, child: Text('Preview as Accountant')),
-      ],
-      child: identity,
-    );
-  }
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+          decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppTheme.line)),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            CircleAvatar(
+                radius: 15,
+                backgroundColor: store.isAccountant
+                    ? AppTheme.blue.withValues(alpha: .16)
+                    : AppTheme.peach.withValues(alpha: .24),
+                child: Icon(
+                    store.isAccountant
+                        ? Icons.calculate_outlined
+                        : Icons.admin_panel_settings_outlined,
+                    color: store.isAccountant ? AppTheme.blue : AppTheme.peach,
+                    size: 17)),
+            const SizedBox(width: 8),
+            Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(store.isAccountant ? 'Accountant' : 'Jane Mwangi',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          color: AppTheme.ink,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700)),
+                  const Text('Sr. School admin',
+                      style: TextStyle(color: AppTheme.muted, fontSize: 10)),
+                ]),
+            const SizedBox(width: 4),
+            const Icon(Icons.keyboard_arrow_down,
+                size: 17, color: AppTheme.muted),
+          ]),
+        ),
+      );
 }
 
 class _SideMenu extends StatelessWidget {
@@ -697,53 +690,50 @@ class DashboardPage extends StatelessWidget {
       children: [
         LayoutBuilder(builder: (context, constraints) {
           // IMPROVED: Better breakpoints (600, 1200)
-          final isMobile = constraints.maxWidth < 600;
           final isTablet =
               constraints.maxWidth >= 600 && constraints.maxWidth < 1200;
           final isDesktop = constraints.maxWidth >= 1200;
 
           final spacing = isDesktop ? 18.0 : (isTablet ? 14.0 : 10.0);
 
-          final statCircles =
-              Wrap(spacing: spacing, runSpacing: spacing, children: [
-            _StatCircle(
-                label: 'Balance',
-                value: '${summary.students}',
-                icon: Icons.people_alt_outlined,
-                tint: AppTheme.peach),
-            _StatCircle(
-                label: 'Collected',
-                value: '${summary.paymentCount}',
-                icon: Icons.receipt_long_outlined,
-                tint: AppTheme.green),
-            _StatCircle(
-                label: 'Expected',
-                value: '${summary.unreadNotifications}',
-                icon: Icons.notifications_none_rounded,
-                tint: AppTheme.ink),
-          ]);
+          final expectedFees = summary.collected + summary.outstanding;
+          final statCircles = Row(
+            children: [
+              Expanded(
+                child: _StatCircle(
+                    label: 'School balance',
+                    value: _money.format(summary.outstanding),
+                    icon: Icons.account_balance_wallet_outlined,
+                    tint: AppTheme.peach),
+              ),
+              SizedBox(width: spacing),
+              Expanded(
+                child: _StatCircle(
+                    label: 'Collected',
+                    value: _money.format(summary.collected),
+                    icon: Icons.receipt_long_outlined,
+                    tint: AppTheme.green),
+              ),
+              SizedBox(width: spacing),
+              Expanded(
+                child: _StatCircle(
+                    label: 'Expected fees',
+                    value: _money.format(expectedFees),
+                    icon: Icons.payments_outlined,
+                    tint: AppTheme.ink),
+              ),
+            ],
+          );
           final courseStats = _CourseStatisticsCard(summary: summary);
 
-          // Stat circles layout changes based on breakpoint
-          final topRow = !store.isAccountant
-              ? courseStats
-              : (isMobile
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        statCircles,
-                        SizedBox(height: spacing),
-                        courseStats,
-                      ],
-                    )
-                  : Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 4, child: statCircles),
-                        SizedBox(width: spacing),
-                        Expanded(flex: 4, child: courseStats),
-                      ],
-                    ));
+          final topRow = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              statCircles,
+              SizedBox(height: spacing),
+              courseStats,
+            ],
+          );
 
           final left = Column(children: [
             topRow,
@@ -753,7 +743,7 @@ class DashboardPage extends StatelessWidget {
             _ActivityTableCard(items: summary.recentActivity),
           ]);
           final right = Column(children: [
-            _ScheduleCard(store: store),
+            _ScheduleCard(items: summary.recentActivity),
             SizedBox(height: spacing),
             _UpcomingCard(store: store),
             SizedBox(height: spacing),
@@ -826,7 +816,6 @@ class _StatCircle extends StatelessWidget {
   final Color tint;
   @override
   Widget build(BuildContext context) => Container(
-        width: 120,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
             color: Colors.white,
@@ -1251,8 +1240,8 @@ class _ActivityTableSkeleton extends StatelessWidget {
 /// "Course Schedule" style right-rail list  remapped to a quick follow-up
 /// queue built from recent activity.
 class _ScheduleCard extends StatelessWidget {
-  const _ScheduleCard({required this.store});
-  final SchoolStore store;
+  const _ScheduleCard({required this.items});
+  final List<Activity> items;
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
@@ -1267,27 +1256,13 @@ class _ScheduleCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
-              const Expanded(
-                  child: Text('Term schedule',
-                      style: TextStyle(
-                          color: AppTheme.ink,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800))),
-              TextButton(
-                  onPressed: () async {
-                    await store.loadEvents();
-                    if (context.mounted) {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => CalendarPage(store: store)));
-                    }
-                  },
-                  child: const Text('More')),
-            ]),
+            const Text('Follow-up schedule',
+                style: TextStyle(
+                    color: AppTheme.ink,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800)),
             const SizedBox(height: 3),
-            const Text("Tap a date to see planned events",
+            const Text("Here's your activity for the week",
                 style: TextStyle(color: AppTheme.muted, fontSize: 11)),
             const SizedBox(height: 14),
             SizedBox(
@@ -1297,163 +1272,69 @@ class _ScheduleCard extends StatelessWidget {
                 itemCount: days.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                 itemBuilder: (_, i) {
-                  final date =
-                      DateTime(days[i].year, days[i].month, days[i].day);
-                  final dayEvents = store.events.where((event) {
-                    final value = event.eventDate.toLocal();
-                    return DateTime(value.year, value.month, value.day) == date;
-                  }).toList();
-                  return InkWell(
-                      onTap: () => _showDayEvents(context, date, dayEvents),
-                      borderRadius: BorderRadius.circular(14),
-                      child: Container(
-                        width: 54,
-                        decoration: BoxDecoration(
-                            color: const Color(0xFFF5F6F6),
-                            borderRadius: BorderRadius.circular(14)),
-                        alignment: Alignment.center,
-                        child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text('${days[i].day}',
-                                  style: const TextStyle(
-                                      color: AppTheme.ink,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 15)),
-                              Text(DateFormat('MMM').format(days[i]),
-                                  style: const TextStyle(
-                                      color: AppTheme.muted, fontSize: 10)),
-                              if (dayEvents.isNotEmpty)
-                                Container(
-                                    margin: const EdgeInsets.only(top: 3),
-                                    width: 5,
-                                    height: 5,
-                                    decoration: const BoxDecoration(
-                                        color: AppTheme.peach,
-                                        shape: BoxShape.circle)),
-                            ]),
-                      ));
+                  final selected = i == 1;
+                  return Container(
+                    width: 54,
+                    decoration: BoxDecoration(
+                        color:
+                            selected ? AppTheme.peach : const Color(0xFFF5F6F6),
+                        borderRadius: BorderRadius.circular(14)),
+                    alignment: Alignment.center,
+                    child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('${days[i].day}',
+                              style: TextStyle(
+                                  color: selected ? Colors.white : AppTheme.ink,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15)),
+                          Text(DateFormat('MMM').format(days[i]),
+                              style: TextStyle(
+                                  color: selected
+                                      ? Colors.white70
+                                      : AppTheme.muted,
+                                  fontSize: 10)),
+                        ]),
+                  );
                 },
               ),
             ),
             const SizedBox(height: 16),
-            for (final event in store.events.take(3))
+            for (final item in items.take(3))
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Row(children: [
                   CircleAvatar(
                       radius: 17,
-                      backgroundColor: AppTheme.peach.withValues(alpha: .13),
-                      child: const Icon(Icons.event_outlined,
-                          color: AppTheme.peach, size: 16)),
+                      backgroundColor:
+                          _roleColor(item.role).withValues(alpha: .13),
+                      child: Icon(_roleIcon(item.role),
+                          color: _roleColor(item.role), size: 16)),
                   const SizedBox(width: 10),
                   Expanded(
                       child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                        Text(event.title,
+                        Text(item.actor,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                                 color: AppTheme.ink,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700)),
-                        Text(
-                            DateFormat('d MMM, h:mm a')
-                                .format(event.eventDate.toLocal()),
+                        Text(item.action,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                                 color: AppTheme.muted, fontSize: 11)),
                       ])),
-                  if (store.isAccountant)
-                    _RoundIcon(
-                        icon: Icons.add,
-                        onTap: () => _showEventDialog(context, store)),
+                  _RoundIcon(icon: Icons.schedule_outlined, onTap: () {}),
                   const SizedBox(width: 6),
                   _RoundIcon(icon: Icons.videocam_outlined, onTap: () {}),
                 ]),
               ),
           ]),
     );
-  }
-
-  void _showDayEvents(
-      BuildContext context, DateTime date, List<CalendarEvent> events) {
-    showModalBottomSheet<void>(
-        context: context,
-        builder: (_) => Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Text(DateFormat('EEEE, d MMMM').format(date),
-                  style: const TextStyle(
-                      color: AppTheme.ink,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800)),
-              const SizedBox(height: 12),
-              if (events.isEmpty)
-                const Text('No events planned for this day.',
-                    style: TextStyle(color: AppTheme.muted)),
-              for (final event in events)
-                ListTile(
-                    leading:
-                        const Icon(Icons.event_outlined, color: AppTheme.peach),
-                    title: Text(event.title),
-                    subtitle: Text(event.description.isEmpty
-                        ? DateFormat('h:mm a').format(event.eventDate.toLocal())
-                        : event.description)),
-              if (store.isAccountant)
-                FilledButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _showEventDialog(context, store, date);
-                    },
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add event')),
-            ])));
-  }
-}
-
-class CalendarPage extends StatelessWidget {
-  const CalendarPage({super.key, required this.store});
-  final SchoolStore store;
-
-  @override
-  Widget build(BuildContext context) {
-    final grouped = <String, List<CalendarEvent>>{};
-    for (final event in store.events) {
-      final day = DateFormat('yyyy-MM-dd').format(event.eventDate.toLocal());
-      grouped.putIfAbsent(day, () => []).add(event);
-    }
-    return Scaffold(
-        appBar: AppBar(title: const Text('Term calendar')),
-        body: _PageScroll(children: [
-          _SectionHeader(
-              title: 'Planned term events',
-              subtitle: '${store.events.length} event(s) scheduled'),
-          const SizedBox(height: 18),
-          for (final entry in grouped.entries)
-            Card(
-                child: Column(children: [
-              ListTile(
-                  title: Text(DateFormat('EEEE, d MMMM')
-                      .format(DateTime.parse(entry.key))),
-                  leading: const Icon(Icons.calendar_today_outlined)),
-              for (final event in entry.value)
-                ListTile(
-                    title: Text(event.title),
-                    subtitle: Text(event.description),
-                    trailing: Text(DateFormat('h:mm a')
-                        .format(event.eventDate.toLocal()))),
-            ])),
-          if (store.isAccountant)
-            Align(
-                alignment: Alignment.centerRight,
-                child: FloatingActionButton.extended(
-                    onPressed: () => _showEventDialog(context, store),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add event'))),
-        ]));
   }
 }
 
@@ -1478,19 +1359,19 @@ class _UpcomingCard extends StatelessWidget {
             children: [
               Row(children: [
                 const Expanded(
-                    child: Text('Payments',
+                    child: Text('Upcoming',
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                             color: Colors.white70,
                             fontSize: 12,
                             fontWeight: FontWeight.w700))),
                 TextButton(
-                    onPressed: () => _showPendingPayments(context, store),
+                    onPressed: () => store.syncEquity(),
                     style: TextButton.styleFrom(foregroundColor: Colors.white),
-                    child: const Text('Review'))
+                    child: const Text('Learn more'))
               ]),
               const SizedBox(height: 4),
-              const Text('TUMA Paybill',
+              const Text('Equity Bank sync',
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                       color: Colors.white,
@@ -1498,129 +1379,21 @@ class _UpcomingCard extends StatelessWidget {
                       fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
               const Text(
-                  'Parents pay via the connected paybill using the student account number or name.',
+                  'Automatically sync new bank deposits into receipts and balances.',
                   style: TextStyle(
                       color: Colors.white, fontSize: 12, height: 1.4)),
               const SizedBox(height: 16),
               Wrap(spacing: 8, runSpacing: 8, children: [
                 const _GlassPill(
-                    icon: Icons.account_balance_outlined,
-                    label: 'Webhook active'),
+                    icon: Icons.access_time_rounded, label: 'Runs hourly'),
                 _GlassPill(
                     icon: Icons.calendar_today_outlined,
                     label: DateFormat('d MMM').format(DateTime.now())),
                 _GlassPill(
                     icon: Icons.link_rounded,
-                    label: store.pendingPayments.isEmpty
-                        ? 'No confirmations'
-                        : '${store.pendingPayments.length} to confirm'),
+                    label: store.loading ? 'Syncing' : 'Ready'),
               ]),
-              if (store.pendingPayments.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                Text(
-                  '${store.pendingPayments.length} payment${store.pendingPayments.length == 1 ? '' : 's'} waiting for student confirmation',
-                  style: const TextStyle(
-                      color: Colors.white, fontSize: 11, height: 1.3),
-                ),
-              ],
             ]),
-      );
-}
-
-Future<void> _showPendingPayments(
-    BuildContext context, SchoolStore store) async {
-  await store.loadPendingPayments();
-  if (store.pendingPayments.isEmpty) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('No unmatched TUMA payments are waiting.')));
-    }
-    return;
-  }
-  await showDialog<void>(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: const Text('Confirm incoming payments'),
-      content: SizedBox(
-        width: 460,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final pending in store.pendingPayments)
-                _PendingPaymentTile(
-                  pending: pending,
-                  students: store.students
-                      .where((student) =>
-                          pending.candidateIds.contains(student.id))
-                      .toList(),
-                  onResolve: (studentId) async {
-                    await store.resolvePendingPayment(pending.id, studentId);
-                    if (context.mounted) Navigator.pop(context);
-                  },
-                ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close')),
-      ],
-    ),
-  );
-}
-
-class _PendingPaymentTile extends StatelessWidget {
-  const _PendingPaymentTile({
-    required this.pending,
-    required this.students,
-    required this.onResolve,
-  });
-  final PendingPayment pending;
-  final List<Student> students;
-  final Future<void> Function(int studentId) onResolve;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF7F8F9),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.line),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(_money.format(pending.amount),
-                style: const TextStyle(
-                    color: AppTheme.ink, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 3),
-            Text(
-              '${pending.payerName} · Account ${pending.accountReference}',
-              style: const TextStyle(color: AppTheme.muted, fontSize: 11),
-            ),
-            const SizedBox(height: 8),
-            if (students.isEmpty)
-              const Text(
-                  'No exact student match. Check the account number before resolving.',
-                  style: TextStyle(color: AppTheme.peach, fontSize: 11))
-            else
-              for (final student in students)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    onPressed: () => onResolve(student.id),
-                    icon: const Icon(Icons.person_add_alt_1_outlined, size: 16),
-                    label: Text(
-                        '${student.name} · ${student.grade} · ${student.admissionNo}'),
-                  ),
-                ),
-          ],
-        ),
       );
 }
 
@@ -2130,30 +1903,7 @@ class _ClassCard extends StatelessWidget {
                                     style: const TextStyle(
                                         color: AppTheme.muted, fontSize: 11)),
                               ])),
-                          PopupMenuButton<String>(
-                            tooltip: 'Class actions',
-                            icon: const Icon(Icons.more_horiz,
-                                color: AppTheme.muted),
-                            onSelected: (action) {
-                              if (action == 'delete') {
-                                _confirmDeleteClass(
-                                    context, _store(context), schoolClass);
-                              }
-                            },
-                            itemBuilder: (_) => const [
-                              PopupMenuItem<String>(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.delete_outline,
-                                        color: Colors.red, size: 18),
-                                    SizedBox(width: 8),
-                                    Text('Delete class'),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                          const Icon(Icons.more_horiz, color: AppTheme.muted),
                         ]),
                         const SizedBox(height: 12),
                         Row(spacing: 10, children: [
@@ -2439,16 +2189,8 @@ class PaymentsPage extends StatelessWidget {
 // Notifications  improved with consistent breakpoints
 // ---------------------------------------------------------------------------
 
-class NotificationsPage extends StatefulWidget {
+class NotificationsPage extends StatelessWidget {
   const NotificationsPage({super.key});
-
-  @override
-  State<NotificationsPage> createState() => _NotificationsPageState();
-}
-
-class _NotificationsPageState extends State<NotificationsPage> {
-  int _selectedTab = 0;
-
   @override
   Widget build(BuildContext context) {
     final store = _store(context);
@@ -2458,92 +2200,18 @@ class _NotificationsPageState extends State<NotificationsPage> {
         for (var i = 0; i < 2; i++) const _NotificationGroupSkeleton()
       ]);
     }
-    final tabs = _notificationTabs(store.notifications);
-    final selectedItems = _selectedTab == 0
-        ? store.notifications
-        : _selectedTab == 1
-            ? store.notifications.where((item) => !item.read).toList()
-            : store.notifications
-                .where(
-                    (item) => _typeGroupLabel(item.type) == tabs[_selectedTab])
-                .toList();
+    final groups = <String, List<SchoolNotification>>{};
+    for (final item in store.notifications) {
+      groups.putIfAbsent(_typeGroupLabel(item.type), () => []).add(item);
+    }
     return _PageScroll(children: [
-      Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppTheme.line)),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (var index = 0; index < tabs.length; index++)
-                Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: ChoiceChip(
-                    label: Text(tabs[index]),
-                    selected: _selectedTab == index,
-                    onSelected: (_) => setState(() => _selectedTab = index),
-                    selectedColor: AppTheme.peach.withValues(alpha: .16),
-                    labelStyle: TextStyle(
-                        color: _selectedTab == index
-                            ? AppTheme.peach
-                            : AppTheme.muted,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12),
-                    side: BorderSide.none,
-                    showCheckmark: false,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-      const SizedBox(height: 18),
-      if (selectedItems.isEmpty)
-        const _EmptyNotifications()
-      else
+      for (final entry in groups.entries) ...[
         _NotificationGroup(
-            title: _selectedTab == 0 ? 'All notifications' : tabs[_selectedTab],
-            items: selectedItems,
-            onMarkRead: store.markRead),
+            title: entry.key, items: entry.value, onMarkRead: store.markRead),
+        const SizedBox(height: 22),
+      ],
     ]);
   }
-
-  List<String> _notificationTabs(List<SchoolNotification> notifications) {
-    final types = <String>[];
-    for (final item in notifications) {
-      final label = _typeGroupLabel(item.type);
-      if (!types.contains(label)) types.add(label);
-    }
-    final tabs = ['All', 'Unread', ...types];
-    if (_selectedTab >= tabs.length) _selectedTab = 0;
-    return tabs;
-  }
-}
-
-class _EmptyNotifications extends StatelessWidget {
-  const _EmptyNotifications();
-
-  @override
-  Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(36),
-        decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.line)),
-        child: const Column(
-          children: [
-            Icon(Icons.notifications_none_outlined,
-                color: AppTheme.muted, size: 34),
-            SizedBox(height: 10),
-            Text('No notifications in this tab.',
-                style: TextStyle(color: AppTheme.muted, fontSize: 12)),
-          ],
-        ),
-      );
 }
 
 class _NotificationGroup extends StatelessWidget {
@@ -3014,52 +2682,35 @@ Future<void> _showStudentDialog(BuildContext context, SchoolStore store,
   final isEditing = student != null;
   final name = TextEditingController(text: student?.name ?? '');
   final admission = TextEditingController(text: student?.admissionNo ?? '');
+  final grade = TextEditingController(text: student?.grade ?? '');
   final guardian = TextEditingController(text: student?.guardian ?? '');
   final phone = TextEditingController(text: student?.guardianPhone ?? '');
-  SchoolClass? selectedClass;
-  for (final schoolClass in store.classes) {
-    if (schoolClass.name == student?.grade) {
-      selectedClass = schoolClass;
-      break;
-    }
-  }
-  selectedClass ??= store.classes.isEmpty ? null : store.classes.first;
   await showDialog<void>(
       context: context,
-      builder: (_) => StatefulBuilder(
-          builder: (context, setState) => _FormDialog(
-              title: isEditing ? 'Edit student' : 'Add student',
-              fields: [
-                ('Student name', name),
-                ('Admission number', admission),
-                ('Parent / guardian', guardian),
-                ('Guardian phone', phone)
-              ],
-              extra: DropdownButtonFormField<SchoolClass>(
-                initialValue: selectedClass,
-                decoration: const InputDecoration(labelText: 'Class'),
-                items: [
-                  for (final schoolClass in store.classes)
-                    DropdownMenuItem(
-                      value: schoolClass,
-                      child: Text('${schoolClass.name} ${schoolClass.stream}'),
-                    ),
-                ],
-                onChanged: (value) => setState(() => selectedClass = value),
-              ),
-              submitLabel: isEditing ? 'Save student' : 'Add student',
-              onSubmit: () async {
-                if (selectedClass == null) {
-                  throw StateError('Select a class for this student.');
-                }
-                await store.addStudent({
-                  'name': name.text,
-                  'admissionNo': admission.text,
-                  'grade': selectedClass!.name,
-                  'guardian': guardian.text,
-                  'guardianPhone': phone.text
-                });
-              })));
+      builder: (_) => _FormDialog(
+          title: isEditing ? 'Edit student' : 'Add student',
+          fields: [
+            ('Student name', name),
+            ('Admission number', admission),
+            ('Grade', grade),
+            ('Parent / guardian', guardian),
+            ('Guardian phone', phone)
+          ],
+          submitLabel: isEditing ? 'Save student' : 'Add student',
+          onSubmit: () async {
+            final payload = {
+              'name': name.text,
+              'admissionNo': admission.text,
+              'grade': grade.text,
+              'guardian': guardian.text,
+              'guardianPhone': phone.text
+            };
+            if (isEditing) {
+              await store.addStudent(payload);
+            } else {
+              await store.addStudent(payload);
+            }
+          }));
 }
 
 Future<void> _showClassDialog(BuildContext context, SchoolStore store) async {
@@ -3086,97 +2737,6 @@ Future<void> _showClassDialog(BuildContext context, SchoolStore store) async {
               'feeTarget': int.tryParse(fee.text) ?? 0
             });
           }));
-}
-
-Future<void> _showEventDialog(BuildContext context, SchoolStore store,
-    [DateTime? initialDate]) async {
-  final title = TextEditingController();
-  final description = TextEditingController();
-  DateTime selectedDate = initialDate ?? DateTime.now();
-  TimeOfDay selectedTime = TimeOfDay.now();
-  await showDialog<void>(
-      context: context,
-      builder: (_) => StatefulBuilder(
-          builder: (context, setState) => _FormDialog(
-              title: 'Add calendar event',
-              fields: [
-                ('Event title', title),
-                ('Description', description),
-              ],
-              extra: Column(children: [
-                ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.calendar_today_outlined),
-                    title: Text(
-                        DateFormat('EEEE, d MMMM yyyy').format(selectedDate)),
-                    onTap: () async {
-                      final value = await showDatePicker(
-                          context: context,
-                          firstDate: DateTime.now()
-                              .subtract(const Duration(days: 365)),
-                          lastDate:
-                              DateTime.now().add(const Duration(days: 730)),
-                          initialDate: selectedDate);
-                      if (value != null) setState(() => selectedDate = value);
-                    }),
-                ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.schedule_outlined),
-                    title: Text(selectedTime.format(context)),
-                    onTap: () async {
-                      final value = await showTimePicker(
-                          context: context, initialTime: selectedTime);
-                      if (value != null) setState(() => selectedTime = value);
-                    }),
-              ]),
-              submitLabel: 'Save event',
-              onSubmit: () async {
-                final eventDate = DateTime(
-                    selectedDate.year,
-                    selectedDate.month,
-                    selectedDate.day,
-                    selectedTime.hour,
-                    selectedTime.minute);
-                await store.addEvent({
-                  'title': title.text,
-                  'description': description.text,
-                  'eventDate': eventDate.toUtc().toIso8601String(),
-                  'createdBy': 'Accountant',
-                });
-              })));
-}
-
-Future<void> _confirmDeleteClass(
-    BuildContext context, SchoolStore store, SchoolClass schoolClass) async {
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: const Text('Delete class?'),
-      content: Text(
-          'Delete ${schoolClass.name} ${schoolClass.stream}? This cannot be undone. Students assigned to this class will remain in the system.'),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel')),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, true),
-          style: FilledButton.styleFrom(backgroundColor: Colors.red),
-          child: const Text('Delete class'),
-        ),
-      ],
-    ),
-  );
-  if (confirmed != true || !context.mounted) return;
-
-  try {
-    await store.deleteClass(schoolClass.id);
-  } catch (error) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete class: $error')),
-      );
-    }
-  }
 }
 
 Future<void> _showPaymentDialog(BuildContext context, SchoolStore store) async {
