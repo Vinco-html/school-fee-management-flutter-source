@@ -2199,17 +2199,31 @@ class _ClassCard extends StatelessWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                Text(
-                                    '${schoolClass.name} ${schoolClass.stream}',
+                                Text(schoolClass.name,
                                     style: const TextStyle(
                                         color: AppTheme.ink,
                                         fontWeight: FontWeight.w800,
                                         fontSize: 13),
                                     overflow: TextOverflow.ellipsis),
-                                Text('@${schoolClass.stream.toLowerCase()}',
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                        color: AppTheme.muted, fontSize: 11)),
+                                Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('Fee/Student',
+                                          style: TextStyle(
+                                              color: AppTheme.muted,
+                                              fontSize: 10)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                          _money.format(schoolClass.feeTarget /
+                                              schoolClass.studentsCount),
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                              color: AppTheme.ink,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w800))
+                                    ]),
                               ])),
                           if (store.isAccountant)
                             PopupMenuButton<String>(
@@ -2354,23 +2368,6 @@ class _ClassCard extends StatelessWidget {
                               width: 1,
                               thickness: 1,
                               color: Color.fromARGB(0, 68, 66, 66)),
-                          Expanded(
-                              child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                const Text('Fee/Student',
-                                    style: TextStyle(
-                                        color: AppTheme.muted, fontSize: 10)),
-                                Text(
-                                    _money.format(schoolClass.feeTarget /
-                                        schoolClass.studentsCount),
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                        color: AppTheme.ink,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w800))
-                              ])),
                         ]),
                       ]),
                 )),

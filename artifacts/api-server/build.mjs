@@ -18,6 +18,8 @@ await build({
     "cookie-parser",
     "drizzle-orm",
     "express",
+    "firebase-admin",
+    "firebase-admin/*",
     "pg",
     "pino",
     "pino-http",
