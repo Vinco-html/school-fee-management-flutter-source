@@ -733,7 +733,7 @@ class DashboardPage extends StatelessWidget {
 
           // FIX: restored role-based layout from Doc 1 — fee stat circles
           // (money detail) are accountant-only; everyone sees course stats.
-          final topRow = !store.isAccountant
+          final topRow = store.isAccountant
               ? courseStats
               : (isMobile
                   ? Column(
