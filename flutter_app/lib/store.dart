@@ -61,6 +61,7 @@ class SchoolStore extends ChangeNotifier {
         api.activity(),
         api.notifications(),
         api.messages(),
+        api.events(),
       ]);
       summary = results[0] as DashboardSummary;
       students = results[1] as List<Student>;
@@ -69,6 +70,7 @@ class SchoolStore extends ChangeNotifier {
       activities = results[4] as List<Activity>;
       notifications = results[5] as List<SchoolNotification>;
       campaigns = results[6] as List<Campaign>;
+      events = results[7] as List<CalendarEvent>;
       error = null;
       hasLoadedOnce = true;
     } catch (err) {
