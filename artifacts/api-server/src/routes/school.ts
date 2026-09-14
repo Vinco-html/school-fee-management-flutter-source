@@ -12,6 +12,7 @@ import {
   studentsTable,
 } from "@workspace/db";
 import { sendPushNotification } from "../push";
+import { requireAdmin, requireAuth } from "./auth";
 
 const router: IRouter = Router();
 let seedPromise: Promise<void> | undefined;
@@ -205,7 +206,7 @@ router.get("/school/students", async (req, res) => {
   return res.json(filtered.map(studentDto));
 });
 
-router.post("/school/students", async (req, res) => {
+router.post("/school/students", requireAuth, requireAdmin, async (req, res) => {
   await seedSchoolData();
   const body = req.body as Partial<typeof studentsTable.$inferInsert> & { actor?: string };
   if (!body.name || !body.admissionNo || !body.grade || !body.guardian || !body.guardianPhone) {
@@ -319,7 +320,7 @@ router.get("/school/payments", async (_req, res) => {
   return res.json(payments.map(paymentDto));
 });
 
-router.post("/school/payments/manual", async (req, res) => {
+router.post("/school/payments/manual", requireAuth, requireAdmin, async (req, res) => {
   await seedSchoolData();
   const body = req.body as Partial<typeof paymentsTable.$inferInsert> & { actor?: string };
   if (!body.studentId || !body.studentName || !body.amount || !body.method) {

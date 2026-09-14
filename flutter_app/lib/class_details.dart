@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'models.dart';
 import 'store.dart';
 import 'student_details.dart';
+import 'documents.dart';
 import 'theme.dart';
 
 final _money = NumberFormat.currency(symbol: 'KES ', decimalDigits: 0);
@@ -48,12 +49,13 @@ class _ClassDetailsState extends State<ClassDetails>
     final paidPercentage = target == 0 ? 0.0 : (paid / target).clamp(0.0, 1.0);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8F9),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8F9),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: const Text(''),
-        iconTheme: const IconThemeData(color: AppTheme.ink),
+        iconTheme:
+            IconThemeData(color: Theme.of(context).colorScheme.onSurface),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -79,7 +81,7 @@ class _ClassDetailsState extends State<ClassDetails>
                 constraints: const BoxConstraints(maxWidth: 720),
                 padding: EdgeInsets.all(isTablet ? 50 : 20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(color: AppTheme.line),
                 ),
@@ -95,6 +97,18 @@ class _ClassDetailsState extends State<ClassDetails>
                           context, 'Class editing is not available yet.'),
                       onMessage: () => _showUnavailableMessage(
                           context, 'Class messaging is not available yet.'),
+                      onReport: () => showClassReport(
+                        context,
+                        widget.store,
+                        schoolClass,
+                        students,
+                        payments,
+                      ),
+                      onFeeStructure: () => showClassFeeStructure(
+                        context,
+                        widget.store,
+                        schoolClass,
+                      ),
                     ),
                     const SizedBox(height: 14),
                     _TabSelector(controller: _tab),
@@ -193,8 +207,8 @@ class _ClassHeader extends StatelessWidget {
                   '${schoolClass.name} ${schoolClass.stream}',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppTheme.ink,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                   ),
@@ -202,15 +216,17 @@ class _ClassHeader extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text('@${schoolClass.stream.toLowerCase()}',
                     overflow: TextOverflow.ellipsis,
-                    style:
-                        const TextStyle(color: AppTheme.muted, fontSize: 12)),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 12)),
                 const SizedBox(height: 20),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: LinearProgressIndicator(
                     value: paidPercentage,
                     minHeight: 10,
-                    backgroundColor: const Color(0xFFF0F2F1),
+                    backgroundColor:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
                     color: AppTheme.green,
                   ),
                 ),
@@ -220,7 +236,9 @@ class _ClassHeader extends StatelessWidget {
                   child: Text(
                     '${(paidPercentage * 100).round()}% of expected fees collected',
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: AppTheme.muted, fontSize: 11),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 11),
                   ),
                 ),
               ],
@@ -231,19 +249,35 @@ class _ClassHeader extends StatelessWidget {
 }
 
 class _ActionRow extends StatelessWidget {
-  const _ActionRow({required this.onEdit, required this.onMessage});
+  const _ActionRow({
+    required this.onEdit,
+    required this.onMessage,
+    required this.onReport,
+    required this.onFeeStructure,
+  });
   final VoidCallback onEdit;
   final VoidCallback onMessage;
+  final VoidCallback onReport;
+  final VoidCallback onFeeStructure;
 
   @override
-  Widget build(BuildContext context) => Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+  Widget build(BuildContext context) => Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 10,
+        runSpacing: 8,
         children: [
           _ActionButton(
               icon: Icons.edit_outlined, label: 'Edit', onTap: onEdit),
-          const SizedBox(width: 10),
           _ActionButton(
               icon: Icons.chat_outlined, label: 'Message', onTap: onMessage),
+          _ActionButton(
+              icon: Icons.assessment_outlined,
+              label: 'Report',
+              onTap: onReport),
+          _ActionButton(
+              icon: Icons.account_balance_wallet_outlined,
+              label: 'Fee structure',
+              onTap: onFeeStructure),
         ],
       );
 }
@@ -284,7 +318,7 @@ class _TabSelector extends StatelessWidget {
         height: 34,
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: AppTheme.line),
         ),
@@ -361,7 +395,8 @@ class _FeeDashboardTab extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: paidPercentage,
                     minHeight: 10,
-                    backgroundColor: const Color(0xFFF0F2F1),
+                    backgroundColor:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
                     color: AppTheme.green,
                   ),
                 ),
@@ -525,7 +560,8 @@ class _FeeBar extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: max == 0 ? 0 : (value / max).clamp(0.0, 1.0),
                   minHeight: 8,
-                  backgroundColor: const Color(0xFFF0F2F1),
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surfaceContainerHighest,
                   color: color,
                 ),
               ),
@@ -608,7 +644,7 @@ class _StudentsTab extends StatelessWidget {
                 crossAxisCount: 2,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
-                childAspectRatio: 1.2),
+                childAspectRatio: 0.8),
             itemBuilder: (_, index) => _StudentCard(
                 student: students[index],
                 onTap: () => onStudentTap(students[index])),
@@ -641,7 +677,7 @@ class _StudentListTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppTheme.line),
           ),
@@ -693,9 +729,10 @@ class _StudentCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
+          height: 120,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppTheme.line),
           ),
@@ -764,7 +801,7 @@ class _SectionCard extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppTheme.line),
         ),

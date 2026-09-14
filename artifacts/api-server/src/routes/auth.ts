@@ -15,6 +15,13 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   return next();
 }
 
+export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  if (res.locals.auth?.role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+  return next();
+}
+
 function hashPassword(password: string) {
   return createHash("sha256").update(password).digest("hex");
 }

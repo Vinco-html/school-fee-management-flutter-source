@@ -35,6 +35,7 @@ class SchoolFeeApp extends StatefulWidget {
 
 class _SchoolFeeAppState extends State<SchoolFeeApp> {
   SchoolStore? store;
+  ThemeMode themeMode = ThemeMode.light;
 
   @override
   void initState() {
@@ -52,6 +53,8 @@ class _SchoolFeeAppState extends State<SchoolFeeApp> {
         debugShowCheckedModeBanner: false,
         title: 'Petunia',
         theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        themeMode: themeMode,
         home: store == null
             ? AuthScreen(
                 api: widget.api,
@@ -67,7 +70,20 @@ class _SchoolFeeAppState extends State<SchoolFeeApp> {
                   });
                   nextStore.load();
                 })
-            : AppShell(store: store!),
+            : AppShell(
+                store: store!,
+                isDarkMode: themeMode == ThemeMode.dark,
+                onToggleTheme: () => setState(() {
+                  themeMode = themeMode == ThemeMode.dark
+                      ? ThemeMode.light
+                      : ThemeMode.dark;
+                }),
+                onLogout: () {
+                  store?.dispose();
+                  widget.api.setToken(null);
+                  setState(() => store = null);
+                },
+              ),
       );
 }
 
@@ -134,8 +150,11 @@ class _AuthScreenState extends State<AuthScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(Icons.school_outlined,
-                          size: 52, color: AppTheme.peach),
+                      Image.asset(
+                        "assets/images/petunia_logo_transparent.png",
+                        width: 62,
+                        height: 62,
+                      ),
                       const SizedBox(height: 12),
                       Text(signup ? 'Create accountant account' : 'Sign in',
                           textAlign: TextAlign.center,

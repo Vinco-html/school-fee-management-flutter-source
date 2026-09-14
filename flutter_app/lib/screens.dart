@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:school_fee_management/class_details.dart';
+import 'package:school_fee_management/documents.dart';
 import 'package:school_fee_management/student_details.dart';
 
 import 'models.dart';
@@ -13,8 +14,17 @@ final _date = DateFormat('d MMM, h:mm a');
 final _dayLabel = DateFormat('d MMM');
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key, required this.store});
+  const AppShell({
+    super.key,
+    required this.store,
+    required this.isDarkMode,
+    required this.onToggleTheme,
+    required this.onLogout,
+  });
   final SchoolStore store;
+  final bool isDarkMode;
+  final VoidCallback onToggleTheme;
+  final VoidCallback onLogout;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -23,15 +33,6 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int index = 0;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  final pages = const [
-    DashboardPage(),
-    StudentsPage(),
-    ClassesPage(),
-    PaymentsPage(),
-    NotificationsPage(),
-    MessagesPage(),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +44,8 @@ class _AppShellState extends State<AppShell> {
       'Classes',
       'Payments',
       'Notifications',
-      'Messages'
+      'Messages',
+      'Documents',
     ];
     final icons = [
       Icons.space_dashboard_rounded,
@@ -52,12 +54,29 @@ class _AppShellState extends State<AppShell> {
       Icons.account_balance_wallet_outlined,
       Icons.notifications_none_rounded,
       Icons.markunread_outlined,
+      Icons.description_outlined,
+    ];
+    final pages = [
+      const DashboardPage(),
+      const StudentsPage(),
+      const ClassesPage(),
+      const PaymentsPage(),
+      const NotificationsPage(),
+      const MessagesPage(),
+      DocumentsPage(store: widget.store),
     ];
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: const Color(0xFFF7F8F9),
-      endDrawer:
-          _SideMenu(store: widget.store, onSelectRole: widget.store.setRole),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      endDrawer: _SideMenu(
+        store: widget.store,
+        index: index,
+        onSelect: (value) => setState(() => index = value),
+        onSelectRole: widget.store.setRole,
+        isDarkMode: widget.isDarkMode,
+        onToggleTheme: widget.onToggleTheme,
+        onLogout: widget.onLogout,
+      ),
       body: SafeArea(
         child: Row(
           children: [
@@ -78,6 +97,9 @@ class _AppShellState extends State<AppShell> {
                     onRefresh: widget.store.load,
                     onOpenMenu: () =>
                         _scaffoldKey.currentState?.openEndDrawer(),
+                    isDarkMode: widget.isDarkMode,
+                    onToggleTheme: widget.onToggleTheme,
+                    onOpenNotifications: () => setState(() => index = 4),
                   ),
                   if (widget.store.isOffline)
                     _OfflineBanner(onRetry: widget.store.load),
@@ -93,7 +115,8 @@ class _AppShellState extends State<AppShell> {
           : Container(
               decoration: const BoxDecoration(
                 color: Colors.white,
-                border: Border(top: BorderSide(color: AppTheme.line)),
+                border:
+                    const Border(top: const BorderSide(color: AppTheme.line)),
               ),
               child: SafeArea(
                 child: Padding(
@@ -107,7 +130,6 @@ class _AppShellState extends State<AppShell> {
                         1,
                         2,
                         3,
-                        4
                       ]) // indices into labels/icons you want to keep
                         _BottomNavItem(
                           icon: icons[i],
@@ -219,33 +241,34 @@ class _Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         width: 232,
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         padding: const EdgeInsets.fromLTRB(18, 24, 14, 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 5),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 5),
               child: Row(children: [
-                Icon(Icons.auto_awesome, color: AppTheme.peach, size: 20),
-                SizedBox(width: 8),
+                const Icon(Icons.auto_awesome, color: AppTheme.peach, size: 20),
+                const SizedBox(width: 8),
                 Flexible(
                   child: Text('Petunia',
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                          color: AppTheme.ink,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 21,
                           fontWeight: FontWeight.w700)),
                 ),
-                Text(' school',
-                    style: TextStyle(color: AppTheme.muted, fontSize: 21)),
+                const Text(' school',
+                    style:
+                        const TextStyle(color: AppTheme.muted, fontSize: 21)),
               ]),
             ),
             const SizedBox(height: 34),
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10),
-              child: Text('MENU',
-                  style: TextStyle(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: const Text('MENU',
+                  style: const TextStyle(
                       color: AppTheme.muted,
                       fontSize: 10,
                       letterSpacing: 1.4,
@@ -303,24 +326,26 @@ class _Sidebar extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 18),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(children: [
-                CircleAvatar(
+                const CircleAvatar(
                     radius: 16,
                     backgroundColor: AppTheme.peach,
-                    child: Text('JM',
-                        style: TextStyle(
+                    child: const Text('JM',
+                        style: const TextStyle(
                             color: AppTheme.ink,
                             fontSize: 11,
                             fontWeight: FontWeight.w800))),
-                SizedBox(width: 9),
+                const SizedBox(width: 9),
                 Expanded(
                     child: Text('Jane Mwangi\nSchool admin',
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                            color: AppTheme.ink, fontSize: 12, height: 1.35))),
-                Icon(Icons.chevron_right_rounded, color: AppTheme.muted),
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 12,
+                            height: 1.35))),
+                const Icon(Icons.chevron_right_rounded, color: AppTheme.muted),
               ]),
             ),
           ],
@@ -365,7 +390,9 @@ class _NavItem extends StatelessWidget {
                     child: Text(label,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                            color: selected ? AppTheme.peach : AppTheme.ink,
+                            color: selected
+                                ? AppTheme.peach
+                                : Theme.of(context).colorScheme.onSurface,
                             fontSize: 13,
                             fontWeight:
                                 selected ? FontWeight.w700 : FontWeight.w500))),
@@ -397,11 +424,17 @@ class _TopBar extends StatelessWidget {
       {required this.store,
       required this.title,
       required this.onRefresh,
-      required this.onOpenMenu});
+      required this.onOpenMenu,
+      required this.isDarkMode,
+      required this.onToggleTheme,
+      required this.onOpenNotifications});
   final SchoolStore store;
   final String title;
   final Future<void> Function() onRefresh;
   final VoidCallback onOpenMenu;
+  final bool isDarkMode;
+  final VoidCallback onToggleTheme;
+  final VoidCallback onOpenNotifications;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -415,8 +448,8 @@ class _TopBar extends StatelessWidget {
             children: [
               Text(title,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      color: AppTheme.ink,
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 25,
                       fontWeight: FontWeight.w800)),
               const SizedBox(height: 4),
@@ -459,11 +492,15 @@ class _TopBar extends StatelessWidget {
                 _RolePicker(store: store, onSelectRole: store.setRole),
                 const SizedBox(width: 12),
                 _RoundIcon(
-                    icon: Icons.wb_sunny_outlined, onTap: () {}, dot: false),
+                    icon: isDarkMode
+                        ? Icons.dark_mode_outlined
+                        : Icons.wb_sunny_outlined,
+                    onTap: onToggleTheme,
+                    dot: false),
                 const SizedBox(width: 4),
                 _RoundIcon(
                     icon: Icons.notifications_none_rounded,
-                    onTap: () {},
+                    onTap: onOpenNotifications,
                     dot: store.unreadCount > 0),
               ],
             ),
@@ -489,7 +526,9 @@ class _RoundIcon extends StatelessWidget {
               color: Colors.white,
               border: Border.all(color: AppTheme.line)),
           child: Stack(children: [
-            Center(child: Icon(icon, size: 17, color: AppTheme.ink)),
+            Center(
+                child: Icon(icon,
+                    size: 17, color: Theme.of(context).colorScheme.onSurface)),
             if (dot)
               Positioned(
                   right: 9,
@@ -568,13 +607,46 @@ class _RolePicker extends StatelessWidget {
 }
 
 class _SideMenu extends StatelessWidget {
-  const _SideMenu({required this.store, required this.onSelectRole});
+  const _SideMenu({
+    required this.store,
+    required this.index,
+    required this.onSelect,
+    required this.onSelectRole,
+    required this.isDarkMode,
+    required this.onToggleTheme,
+    required this.onLogout,
+  });
   final SchoolStore store;
+  final int index;
+  final ValueChanged<int> onSelect;
   final ValueChanged<UserRole> onSelectRole;
+  final bool isDarkMode;
+  final VoidCallback onToggleTheme;
+  final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
+    const labels = [
+      'Dashboard',
+      'Students',
+      'Classes',
+      'Payments',
+      'Notifications',
+      'Messages',
+      'Documents',
+    ];
+    const icons = [
+      Icons.space_dashboard_rounded,
+      Icons.people_alt_outlined,
+      Icons.school_outlined,
+      Icons.account_balance_wallet_outlined,
+      Icons.notifications_none_rounded,
+      Icons.markunread_outlined,
+      Icons.description_outlined,
+    ];
+    final panelColor = Theme.of(context).colorScheme.surface;
+    final foreground = Theme.of(context).colorScheme.onSurface;
     return Drawer(
       width: size.width,
       backgroundColor: Colors.transparent,
@@ -591,12 +663,14 @@ class _SideMenu extends StatelessWidget {
             alignment: Alignment.topRight,
             child: SafeArea(
               child: Container(
-                width: size.width * 0.6,
-                height: size.height * 0.4,
-                margin: const EdgeInsets.all(12),
+                width: math.min(size.width * .6, 380),
+                height: math.min(size.height * .6, 600),
+                margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
+                  color: panelColor,
+                  borderRadius: const BorderRadius.all(
+                    Radius.circular(14),
+                  ),
                   boxShadow: [
                     BoxShadow(
                         color: Colors.black.withValues(alpha: .08),
@@ -606,67 +680,107 @@ class _SideMenu extends StatelessWidget {
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(18, 20, 18, 20),
-                  children: [
-                    const Text('MENU',
+                  padding: const EdgeInsets.fromLTRB(22, 24, 22, 28),
+                  children: <Widget>[
+                    Row(
+                      children: [
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: AppTheme.peach.withValues(alpha: .16),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Image.asset(
+                              'assets/images/petunia_logo_transparent.png',
+                              width: 40,
+                              height: 40,
+                              fit: BoxFit.contain),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Petunia School',
+                            style: TextStyle(
+                              color: foreground,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Close menu',
+                          onPressed: () => Navigator.pop(context),
+                          icon: Icon(Icons.close_rounded,
+                              color: foreground, size: 22),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 28),
+                    const Text('WORKSPACE',
                         style: TextStyle(
                             color: AppTheme.muted,
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
-                            letterSpacing: 1)),
-                    const SizedBox(height: 12),
-                    _RolePicker(store: store, onSelectRole: onSelectRole),
-                    const SizedBox(height: 20),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Stack(clipBehavior: Clip.none, children: [
-                        const Icon(Icons.message, color: AppTheme.ink),
-                        if (store.unreadCount > 0)
-                          Positioned(
-                            right: -2,
-                            top: -2,
-                            child: Container(
-                              width: 7,
-                              height: 7,
-                              decoration: const BoxDecoration(
-                                  color: AppTheme.peach,
-                                  shape: BoxShape.circle),
-                            ),
-                          ),
-                      ]),
-                      title: const Text('Messages'),
-                      trailing: store.unreadCount > 0
-                          ? Text('${store.unreadCount}',
-                              style: const TextStyle(
-                                  color: AppTheme.peach,
-                                  fontWeight: FontWeight.w800))
-                          : null,
-                      onTap: () => Navigator.pop(context),
-                    ),
-                    const Divider(height: 20),
-                    Row(children: [
-                      Expanded(
-                        child: _RoundIcon(
-                            icon: Icons.wb_twilight,
-                            onTap: () => Navigator.pop(context),
-                            dot: store.unreadCount > 0),
+                            letterSpacing: 1.2)),
+                    const SizedBox(height: 10),
+                    for (var i = 4; i < labels.length; i++)
+                      _NavItem(
+                        label: labels[i],
+                        icon: icons[i],
+                        selected: i == index,
+                        count: i == 4 ? store.unreadCount : 0,
+                        onTap: () {
+                          onSelect(i);
+                          Navigator.pop(context);
+                        },
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                          child: _RoundIcon(
-                              icon: Icons.wb_twilight,
-                              onTap: () => Navigator.pop(context),
-                              dot: store.unreadCount > 0)),
-                    ]),
-                    const SizedBox(height: 12),
-                    const Text('Logout',
-                        style: TextStyle(
-                            color: Color(0xFFFF0000),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1)),
-                    const SizedBox(height: 12),
-                    const Icon(Icons.close, color: Color(0xFF000000))
+                    const SizedBox(height: 18),
+                    _RolePicker(store: store, onSelectRole: onSelectRole),
+                    const SizedBox(height: 16),
+                    Material(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: .05),
+                      borderRadius: BorderRadius.circular(16),
+                      child: ListTile(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                        leading: Icon(
+                          isDarkMode
+                              ? Icons.dark_mode_outlined
+                              : Icons.light_mode_outlined,
+                          color: AppTheme.peach,
+                        ),
+                        title: Text(isDarkMode ? '' : '',
+                            style: TextStyle(
+                                color: foreground,
+                                fontWeight: FontWeight.w700)),
+                        subtitle: const Text(''),
+                        trailing: Switch.adaptive(
+                          value: isDarkMode,
+                          onChanged: (_) => onToggleTheme(),
+                          activeThumbColor: AppTheme.peach,
+                        ),
+                        onTap: onToggleTheme,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        onLogout();
+                      },
+                      icon: const Icon(Icons.logout_rounded),
+                      label: const Text('Log out'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.redAccent,
+                        side: BorderSide(
+                            color: Colors.redAccent.withValues(alpha: .35)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -807,10 +921,10 @@ class _DashboardSkeleton extends StatelessWidget {
                     stats2,
                   ],
                 )
-              : Row(children: [
-                  Expanded(flex: 3, child: stats),
-                  const SizedBox(width: 14),
-                  const Expanded(flex: 4, child: stats2),
+              : const Row(children: [
+                  const Expanded(flex: 3, child: stats),
+                  SizedBox(width: 14),
+                  Expanded(flex: 4, child: stats2),
                 ]);
         }),
         const SizedBox(height: 18),
@@ -857,7 +971,7 @@ class _StatCircle extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                       color: AppTheme.ink,
-                      fontSize: 17,
+                      fontSize: 12,
                       fontWeight: FontWeight.w900)),
             ]),
       );
@@ -1166,7 +1280,7 @@ class _ActivityTableCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(children: [
           Expanded(
-              flex: 2,
+              flex: 1,
               child: Row(children: [
                 CircleAvatar(
                     radius: 15,
@@ -1425,27 +1539,45 @@ class _ScheduleCard extends StatelessWidget {
   }
 }
 
-/// Full term calendar. FIX: kept Doc 2's structural improvements over Doc 1
-/// (real FAB, AppBar action for accountants, extracted empty-state and
-/// day-card widgets) since those were genuine upgrades, not regressions.
-class CalendarPage extends StatelessWidget {
+/// Interactive month calendar with event markers, day selection, agenda and
+/// persistent event deletion.
+class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key, required this.store});
   final SchoolStore store;
 
   @override
+  State<CalendarPage> createState() => _CalendarPageState();
+}
+
+class _CalendarPageState extends State<CalendarPage> {
+  late DateTime _selectedDay = _dateOnly(DateTime.now());
+  late DateTime _month = DateTime(_selectedDay.year, _selectedDay.month);
+
+  List<CalendarEvent> _eventsOn(DateTime day) =>
+      widget.store.events.where((event) {
+        final date = event.eventDate.toLocal();
+        return date.year == day.year &&
+            date.month == day.month &&
+            date.day == day.day;
+      }).toList()
+        ..sort((a, b) => a.eventDate.compareTo(b.eventDate));
+
+  @override
   Widget build(BuildContext context) {
-    final grouped = <String, List<CalendarEvent>>{};
-    for (final event in store.events) {
-      final key = DateFormat('yyyy-MM-dd').format(event.eventDate.toLocal());
-      grouped.putIfAbsent(key, () => []).add(event);
-    }
+    final selectedEvents = _eventsOn(_selectedDay);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Term calendar'),
         actions: [
-          if (store.isAccountant)
+          IconButton(
+            tooltip: 'Refresh calendar',
+            onPressed: widget.store.loadEvents,
+            icon: const Icon(Icons.refresh),
+          ),
+          if (widget.store.isAccountant)
             IconButton(
-              onPressed: () => _showEventDialog(context, store),
+              onPressed: () =>
+                  _showEventDialog(context, widget.store, _selectedDay),
               icon: const Icon(Icons.add),
               tooltip: 'Add event',
             ),
@@ -1454,22 +1586,224 @@ class CalendarPage extends StatelessWidget {
       body: _PageScroll(
         children: [
           _SectionHeader(
-              title: 'Planned term events',
-              subtitle: '${store.events.length} event(s) scheduled'),
+            title: DateFormat('MMMM yyyy').format(_month),
+            subtitle:
+                '${widget.store.events.length} event(s) scheduled · Tap a day to view its events',
+          ),
           const SizedBox(height: 18),
-          if (grouped.isEmpty)
-            const _EmptyCalendarCard()
-          else
-            for (final entry in grouped.entries) _CalendarDayCard(entry: entry),
+          _MonthCalendar(
+            month: _month,
+            selectedDay: _selectedDay,
+            events: widget.store.events,
+            onPrevious: () => setState(() {
+              _month = DateTime(_month.year, _month.month - 1);
+            }),
+            onNext: () => setState(() {
+              _month = DateTime(_month.year, _month.month + 1);
+            }),
+            onToday: () => setState(() {
+              _selectedDay = _dateOnly(DateTime.now());
+              _month = DateTime(_selectedDay.year, _selectedDay.month);
+            }),
+            onSelected: (day) => setState(() => _selectedDay = day),
+          ),
+          const SizedBox(height: 16),
+          _CalendarAgenda(
+            day: _selectedDay,
+            events: selectedEvents,
+            onDelete: (event) => _confirmDeleteEvent(context, event),
+          ),
+          const SizedBox(height: 20),
+          _UpcomingCalendarEvents(
+            events: widget.store.events
+                .where((event) => event.eventDate.toLocal().isAfter(
+                    DateTime.now().subtract(const Duration(minutes: 1))))
+                .toList()
+              ..sort((a, b) => a.eventDate.compareTo(b.eventDate)),
+            onSelected: (event) => setState(() {
+              _selectedDay = _dateOnly(event.eventDate.toLocal());
+              _month = DateTime(_selectedDay.year, _selectedDay.month);
+            }),
+            onDelete: (event) => _confirmDeleteEvent(context, event),
+          ),
         ],
       ),
-      floatingActionButton: store.isAccountant
+      floatingActionButton: widget.store.isAccountant
           ? FloatingActionButton.extended(
-              onPressed: () => _showEventDialog(context, store),
+              onPressed: () =>
+                  _showEventDialog(context, widget.store, _selectedDay),
               icon: const Icon(Icons.add),
-              label: const Text('Add event'),
+              label: const Text('Create event'),
             )
           : null,
+    );
+  }
+
+  Future<void> _confirmDeleteEvent(
+      BuildContext context, CalendarEvent event) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete event?'),
+        content: Text('Remove "${event.title}" from the term calendar?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Delete event')),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    try {
+      await widget.store.deleteEvent(event.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Event deleted successfully.')));
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not delete event: $error')));
+      }
+    }
+  }
+}
+
+DateTime _dateOnly(DateTime value) =>
+    DateTime(value.year, value.month, value.day);
+
+class _MonthCalendar extends StatelessWidget {
+  const _MonthCalendar({
+    required this.month,
+    required this.selectedDay,
+    required this.events,
+    required this.onPrevious,
+    required this.onNext,
+    required this.onToday,
+    required this.onSelected,
+  });
+  final DateTime month;
+  final DateTime selectedDay;
+  final List<CalendarEvent> events;
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
+  final VoidCallback onToday;
+  final ValueChanged<DateTime> onSelected;
+
+  bool _sameDay(DateTime first, DateTime second) =>
+      first.year == second.year &&
+      first.month == second.month &&
+      first.day == second.day;
+
+  bool _hasEvents(DateTime day) => events.any((event) {
+        final value = event.eventDate.toLocal();
+        return _sameDay(value, day);
+      });
+
+  @override
+  Widget build(BuildContext context) {
+    final first = DateTime(month.year, month.month, 1);
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    final leadingDays = first.weekday % 7;
+    final cells = <DateTime>[
+      for (var i = 0; i < leadingDays; i++)
+        DateTime(month.year, month.month, -leadingDays + i + 1),
+      for (var day = 1; day <= daysInMonth; day++)
+        DateTime(month.year, month.month, day),
+    ];
+    while (cells.length % 7 != 0) {
+      cells.add(cells.last.add(const Duration(days: 1)));
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppTheme.line)),
+      child: Column(children: [
+        Row(children: [
+          IconButton(
+              onPressed: onPrevious, icon: const Icon(Icons.chevron_left)),
+          Expanded(
+              child: Text(DateFormat('MMMM yyyy').format(month),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      color: AppTheme.ink,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800))),
+          IconButton(onPressed: onNext, icon: const Icon(Icons.chevron_right)),
+          TextButton(onPressed: onToday, child: const Text('Today')),
+        ]),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            for (final label in ['S', 'M', 'T', 'W', 'T', 'F', 'S'])
+              Expanded(
+                  child: Center(
+                      child: Text(label,
+                          style: const TextStyle(
+                              color: AppTheme.muted,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800)))),
+          ],
+        ),
+        const SizedBox(height: 6),
+        GridView.builder(
+          itemCount: cells.length,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7, mainAxisSpacing: 6, crossAxisSpacing: 6),
+          itemBuilder: (_, index) {
+            final day = cells[index];
+            final inMonth = day.month == month.month;
+            final selected = _sameDay(day, selectedDay);
+            final today = _sameDay(day, DateTime.now());
+            return InkWell(
+              onTap: () => onSelected(day),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                decoration: BoxDecoration(
+                    color: selected
+                        ? AppTheme.peach
+                        : today
+                            ? AppTheme.peach.withValues(alpha: .12)
+                            : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    border: today && !selected
+                        ? Border.all(color: AppTheme.peach)
+                        : null),
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('${day.day}',
+                          style: TextStyle(
+                              color: !inMonth
+                                  ? AppTheme.muted.withValues(alpha: .4)
+                                  : selected
+                                      ? Colors.white
+                                      : AppTheme.ink,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 3),
+                      if (_hasEvents(day))
+                        Container(
+                            width: 5,
+                            height: 5,
+                            decoration: BoxDecoration(
+                                color: selected ? Colors.white : AppTheme.peach,
+                                shape: BoxShape.circle)),
+                    ]),
+              ),
+            );
+          },
+        ),
+      ]),
     );
   }
 }
@@ -1497,46 +1831,114 @@ class _EmptyCalendarCard extends StatelessWidget {
       );
 }
 
-class _CalendarDayCard extends StatelessWidget {
-  const _CalendarDayCard({required this.entry});
-  final MapEntry<String, List<CalendarEvent>> entry;
+class _CalendarAgenda extends StatelessWidget {
+  const _CalendarAgenda(
+      {required this.day, required this.events, required this.onDelete});
+  final DateTime day;
+  final List<CalendarEvent> events;
+  final ValueChanged<CalendarEvent> onDelete;
 
   @override
   Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppTheme.line)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(DateFormat('EEEE, d MMMM').format(DateTime.parse(entry.key)),
-                style: const TextStyle(
-                    color: AppTheme.ink,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800)),
-            const SizedBox(height: 8),
-            for (final event in entry.value)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading:
-                    const Icon(Icons.event_outlined, color: AppTheme.peach),
-                title: Text(event.title),
-                subtitle: Text(event.description.isEmpty
-                    ? DateFormat('h:mm a').format(event.eventDate.toLocal())
-                    : event.description),
-                trailing: Text(
-                    DateFormat('h:mm a').format(event.eventDate.toLocal())),
-              ),
-          ],
-        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(DateFormat('EEEE, d MMMM').format(day),
+              style: const TextStyle(
+                  color: AppTheme.ink,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800)),
+          const SizedBox(height: 10),
+          if (events.isEmpty)
+            const Text('No events planned for this day.',
+                style: TextStyle(color: AppTheme.muted, fontSize: 12))
+          else
+            for (final event in events)
+              _EventTile(event: event, onDelete: onDelete),
+        ]),
       );
 }
 
-/// Gradient "Upcoming Course" style card, remapped to the TUMA paybill
+class _UpcomingCalendarEvents extends StatelessWidget {
+  const _UpcomingCalendarEvents(
+      {required this.events, required this.onSelected, required this.onDelete});
+  final List<CalendarEvent> events;
+  final ValueChanged<CalendarEvent> onSelected;
+  final ValueChanged<CalendarEvent> onDelete;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Upcoming events',
+              style: TextStyle(
+                  color: AppTheme.ink,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800)),
+          const SizedBox(height: 10),
+          if (events.isEmpty)
+            const _EmptyCalendarCard()
+          else
+            for (final event in events.take(8))
+              InkWell(
+                onTap: () => onSelected(event),
+                borderRadius: BorderRadius.circular(14),
+                child: _EventTile(event: event, onDelete: onDelete),
+              ),
+        ],
+      );
+}
+
+class _EventTile extends StatelessWidget {
+  const _EventTile({required this.event, required this.onDelete});
+  final CalendarEvent event;
+  final ValueChanged<CalendarEvent> onDelete;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(top: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+            color: AppTheme.peach.withValues(alpha: .08),
+            borderRadius: BorderRadius.circular(14)),
+        child: Row(children: [
+          Container(
+              width: 4,
+              height: 40,
+              decoration: BoxDecoration(
+                  color: AppTheme.peach,
+                  borderRadius: BorderRadius.circular(4))),
+          const SizedBox(width: 10),
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(event.title,
+                    style: const TextStyle(
+                        color: AppTheme.ink,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800)),
+                const SizedBox(height: 3),
+                Text(
+                    '${DateFormat('d MMM, h:mm a').format(event.eventDate.toLocal())}${event.description.isEmpty ? '' : ' · ${event.description}'}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        const TextStyle(color: AppTheme.muted, fontSize: 11)),
+              ])),
+          IconButton(
+              tooltip: 'Delete event',
+              onPressed: () => onDelete(event),
+              icon: const Icon(Icons.delete_outline,
+                  color: Colors.red, size: 20)),
+        ]),
+      );
+}
+
+/// Gradient "Upcoming Course" style card, remapped to the Equity paybill
 /// summary. FIX: restored Doc 1's pending-payment reconciliation flow
 /// (_showPendingPayments / _PendingPaymentTile) that Doc 2 had replaced
 /// with a generic, non-actionable bank-sync status card.
@@ -1571,7 +1973,7 @@ class _UpcomingCard extends StatelessWidget {
                     child: const Text('Review'))
               ]),
               const SizedBox(height: 4),
-              const Text('TUMA Paybill',
+              const Text('Equity Paybill',
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                       color: Colors.white,
@@ -1586,7 +1988,7 @@ class _UpcomingCard extends StatelessWidget {
               Wrap(spacing: 8, runSpacing: 8, children: [
                 const _GlassPill(
                     icon: Icons.account_balance_outlined,
-                    label: 'Webhook active'),
+                    label: 'fetching latest data'),
                 _GlassPill(
                     icon: Icons.calendar_today_outlined,
                     label: DateFormat('d MMM').format(DateTime.now())),
@@ -2924,7 +3326,7 @@ class _TableHeader extends StatelessWidget {
       child: Row(children: [
         for (var i = 0; i < cells.length; i++)
           Expanded(
-              flex: i == 0 ? 2 : 1,
+              flex: (i == 0 && cells.length == 2) ? 7 : 5,
               child: Text(cells[i].toUpperCase(),
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(

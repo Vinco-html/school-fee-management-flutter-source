@@ -202,6 +202,10 @@ class ApiClient {
       CalendarEvent.fromJson(
           await _request('/school/events', method: 'POST', body: body)
               as Map<String, dynamic>);
+
+  Future<void> deleteEvent(int id) async {
+    await _request('/school/events/$id', method: 'DELETE');
+  }
 }
 
 class ApiException implements Exception {

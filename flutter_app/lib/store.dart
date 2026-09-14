@@ -125,9 +125,10 @@ class SchoolStore extends ChangeNotifier {
     await load();
   }
 
-  Future<void> addPayment(Map<String, dynamic> body) async {
-    await api.addManualPayment(body);
+  Future<Payment> addPayment(Map<String, dynamic> body) async {
+    final payment = await api.addManualPayment(body);
     await load();
+    return payment;
   }
 
   Future<void> resolvePendingPayment(int pendingId, int studentId) async {
@@ -157,6 +158,11 @@ class SchoolStore extends ChangeNotifier {
 
   Future<void> addEvent(Map<String, dynamic> body) async {
     await api.addEvent(body);
+    await loadEvents();
+  }
+
+  Future<void> deleteEvent(int id) async {
+    await api.deleteEvent(id);
     await loadEvents();
   }
 

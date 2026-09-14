@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'models.dart';
 import 'theme.dart';
 import 'store.dart';
+import 'documents.dart';
 
 final _money = NumberFormat.currency(symbol: 'KES ', decimalDigits: 0);
 final _date = DateFormat('d MMM yyyy, h:mm a');
@@ -35,12 +36,13 @@ class _StudentDetailsState extends State<StudentDetails>
       ..sort((a, b) => b.paidAt.compareTo(a.paidAt));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8F9),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8F9),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: const Text(""),
-        iconTheme: const IconThemeData(color: AppTheme.ink),
+        iconTheme:
+            IconThemeData(color: Theme.of(context).colorScheme.onSurface),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -76,7 +78,7 @@ class _StudentDetailsState extends State<StudentDetails>
                     ? const EdgeInsets.all(50)
                     : const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(color: AppTheme.line)),
                 width: cardWidth,
@@ -88,14 +90,16 @@ class _StudentDetailsState extends State<StudentDetails>
                     _AvatarHeader(student: student),
                     const SizedBox(height: 6),
                     Text(student.name,
-                        style: const TextStyle(
-                            color: AppTheme.ink,
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontSize: 18,
                             fontWeight: FontWeight.w800)),
                     const SizedBox(height: 3),
                     Text('@${student.admissionNo}',
-                        style: const TextStyle(
-                            color: AppTheme.muted, fontSize: 12)),
+                        style: TextStyle(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 12)),
                     const SizedBox(height: 18),
                     _ActionRow(
                       onEdit: () => _editStudent(context),
@@ -108,7 +112,7 @@ class _StudentDetailsState extends State<StudentDetails>
                       height: 30,
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: AppTheme.line)),
                       child: TabBar(
@@ -226,11 +230,11 @@ class _AvatarHeader extends StatelessWidget {
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 shape: BoxShape.circle,
                 border: Border.all(color: AppTheme.line)),
-            child: const Icon(Icons.camera_alt_outlined,
-                size: 15, color: AppTheme.ink),
+            child: Icon(Icons.camera_alt_outlined,
+                size: 15, color: Theme.of(context).colorScheme.onSurface),
           ),
         ],
       );
@@ -270,7 +274,9 @@ class _ActionButton extends StatelessWidget {
   final bool destructive;
   @override
   Widget build(BuildContext context) {
-    final color = destructive ? Colors.red : AppTheme.ink;
+    final color = destructive
+        ? Theme.of(context).colorScheme.error
+        : Theme.of(context).colorScheme.onSurface;
     return SizedBox(
         width: 80,
         height: 36,
@@ -280,7 +286,7 @@ class _ActionButton extends StatelessWidget {
             foregroundColor: color,
             side: BorderSide(
                 color: destructive
-                    ? Colors.red.withValues(alpha: .3)
+                    ? Theme.of(context).colorScheme.error.withValues(alpha: .3)
                     : AppTheme.line),
             padding: const EdgeInsets.symmetric(vertical: 12),
             shape:
@@ -317,7 +323,7 @@ class _FeeDashboardTab extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppTheme.line)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -341,7 +347,8 @@ class _FeeDashboardTab extends StatelessWidget {
             child: LinearProgressIndicator(
               value: paidPct.clamp(0, 1),
               minHeight: 10,
-              backgroundColor: const Color(0xFFF0F2F1),
+              backgroundColor:
+                  Theme.of(context).colorScheme.surfaceContainerHighest,
               color: AppTheme.green,
             ),
           ),
@@ -355,13 +362,13 @@ class _FeeDashboardTab extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppTheme.line)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Payments by month',
+          Text('Payments by month',
               style: TextStyle(
-                  color: AppTheme.ink,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 13,
                   fontWeight: FontWeight.w800)),
           const SizedBox(height: 14),
@@ -386,7 +393,7 @@ class _MiniStat extends StatelessWidget {
           const SizedBox(height: 3),
           Text(value,
               style: TextStyle(
-                  color: color ?? AppTheme.ink,
+                  color: color ?? Theme.of(context).colorScheme.onSurface,
                   fontSize: 16,
                   fontWeight: FontWeight.w800)),
         ],
@@ -462,7 +469,7 @@ class _PaymentHistoryTab extends StatelessWidget {
         padding: const EdgeInsets.all(30),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppTheme.line)),
         child: const Text('No payments recorded yet.',
@@ -477,7 +484,7 @@ class _PaymentHistoryTab extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppTheme.line)),
               child: Row(children: [
@@ -505,6 +512,13 @@ class _PaymentHistoryTab extends StatelessWidget {
                               color: AppTheme.muted, fontSize: 11)),
                     ],
                   ),
+                ),
+                IconButton(
+                  tooltip: 'View receipt',
+                  icon: const Icon(Icons.receipt_long_outlined,
+                      size: 18, color: AppTheme.green),
+                  onPressed: () =>
+                      showPaymentReceipt(context, payment, student),
                 ),
                 IconButton(
                   icon: const Icon(Icons.edit_outlined,
