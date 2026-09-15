@@ -760,7 +760,8 @@ class _SideMenu extends StatelessWidget {
                         subtitle: const Text(''),
                         trailing: Switch.adaptive(
                           value: isDarkMode,
-                          onChanged: (_) => onToggleTheme(),
+                          // onToggleTheme()
+                          onChanged: (_) => {},
                           activeThumbColor: AppTheme.peach,
                         ),
                         onTap: onToggleTheme,
